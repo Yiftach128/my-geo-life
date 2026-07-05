@@ -13,7 +13,7 @@ interface Props {
 export function SidePanel({ selectedItem, onClose }: Props) {
   return (
     <Drawer
-      anchor="right"
+      anchor="left"
       open={selectedItem !== null}
       onClose={onClose}
       sx={{ '& .MuiDrawer-paper': { width: 320, p: 2 } }}

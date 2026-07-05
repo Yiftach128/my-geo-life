@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { pointSchema, hexColorSchema } from '../../shared/schemas/geo.schemas.js';
 import { Point } from '../../shared/domain/point.js';
 import { DEFAULT_COLOR } from '../../shared/domain/geo-style.js';
+import { LANDMARK_ICON_KEYS, DEFAULT_ICON } from '../domain/landmark-icon.js';
 
 export const createLandmarkSchema = z.object({
   name: z
@@ -10,7 +11,7 @@ export const createLandmarkSchema = z.object({
     .max(80, { message: 'Name must be less than 80 characters' }),
   description: z.string().max(500, { message: 'Description must be less than 500 characters' }).optional(),
   position: pointSchema,
-  iconUrl: z.url({ message: 'iconUrl must be a valid URL' }).optional(),
+  iconUrl: z.enum(LANDMARK_ICON_KEYS, { message: 'iconUrl must be one of the preset icons' }).default(DEFAULT_ICON),
   color: hexColorSchema.default(DEFAULT_COLOR),
 });
 
@@ -21,7 +22,7 @@ export class CreateLandmarkDto {
   readonly name: string;
   readonly description?: string;
   readonly position: Point;
-  readonly iconUrl?: string;
+  readonly iconUrl: string;
   readonly color: string;
 
   constructor(data: CreateLandmarkInput) {

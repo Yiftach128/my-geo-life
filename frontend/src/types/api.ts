@@ -14,6 +14,9 @@ export interface GeoStyle {
 
 export const DEFAULT_COLOR = '#3388ff';
 
+/** Zoom level used when flying the map to a single point (address search, landmark click). */
+export const POINT_FLY_ZOOM = 16;
+
 export const DEFAULT_GEO_STYLE: GeoStyle = {
   strokeColor: DEFAULT_COLOR,
   fillColor: DEFAULT_COLOR,

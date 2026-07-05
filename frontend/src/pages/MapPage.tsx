@@ -6,6 +6,7 @@ import { AuthButton } from '../components/overlay/AuthButton';
 import { SearchBar } from '../components/overlay/SearchBar';
 import { LayerToggles } from '../components/overlay/LayerToggles';
 import { AddItemButton } from '../components/overlay/AddItemButton';
+import { MapObjectsList } from '../components/overlay/MapObjectsList';
 import { DrawingModeBanner } from '../components/overlay/DrawingModeBanner';
 import { SidePanel } from '../components/panel/SidePanel';
 import { AuthModal } from '../components/auth/AuthModal';
@@ -83,25 +84,36 @@ export default function MapPage() {
           <SearchBar mapRef={mapRef} />
         </Box>
 
-        {/* Top-right: Layer toggles + Add button */}
+        {/* Top-right: Layer toggles + Add button, with the objects list below */}
         <Box
           sx={{
             position: 'absolute',
             top: 16,
             right: 16,
             display: 'flex',
-            flexDirection: 'row',
+            flexDirection: 'column',
             gap: 1,
-            alignItems: 'center',
+            alignItems: 'flex-end',
             pointerEvents: 'auto',
           }}
         >
-          <LayerToggles
-            visibility={layerVisibility}
-            onChange={setLayerVisibility}
-            disabled={!isAuthenticated}
-          />
-          <AddItemButton dispatch={drawingMode.dispatch} disabled={!isAuthenticated} />
+          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, alignItems: 'center' }}>
+            <LayerToggles
+              visibility={layerVisibility}
+              onChange={setLayerVisibility}
+              disabled={!isAuthenticated}
+            />
+            <AddItemButton dispatch={drawingMode.dispatch} disabled={!isAuthenticated} />
+          </Box>
+          <Box sx={{ mt: 4 }}>
+            <MapObjectsList
+              landmarks={landmarks}
+              circles={circles}
+              polygons={polygons}
+              visibility={layerVisibility}
+              mapRef={mapRef}
+            />
+          </Box>
         </Box>
 
         {/* Centered top: Drawing mode banner */}

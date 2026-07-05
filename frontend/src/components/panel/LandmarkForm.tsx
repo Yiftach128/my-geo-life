@@ -1,6 +1,16 @@
 import { useState } from 'react';
-import { Box, Button, CircularProgress, Divider, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Divider,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from '@mui/material';
 import { StyleEditor } from './StyleEditor';
+import { LANDMARK_ICONS, LANDMARK_ICON_KEYS, resolveIconKey } from '../map/landmarkIcons';
 import { useUpdateLandmark, useDeleteLandmark } from '../../hooks/useLandmarks';
 import type { LandmarkDto } from '../../types/api';
 
@@ -13,13 +23,16 @@ export function LandmarkForm({ item, onClose }: Props) {
   const [name, setName] = useState(item.name);
   const [description, setDescription] = useState(item.description ?? '');
   const [color, setColor] = useState(item.color);
-  const [opacity, setOpacity] = useState(1);
+  const [icon, setIcon] = useState(resolveIconKey(item.iconUrl));
 
   const update = useUpdateLandmark();
   const del = useDeleteLandmark();
 
   const handleSave = () => {
-    update.mutate({ id: item.id, data: { name, description: description || undefined, color } });
+    update.mutate({
+      id: item.id,
+      data: { name, description: description || undefined, color, iconUrl: icon },
+    });
   };
 
   const handleDelete = () => {
@@ -49,12 +62,28 @@ export function LandmarkForm({ item, onClose }: Props) {
         inputProps={{ maxLength: 500 }}
       />
       <Divider />
-      <StyleEditor
-        color={color}
-        opacity={opacity}
-        onColorChange={setColor}
-        onOpacityChange={setOpacity}
-      />
+      <Box>
+        <Typography variant="body2" gutterBottom>
+          Icon
+        </Typography>
+        <ToggleButtonGroup
+          value={icon}
+          exclusive
+          onChange={(_, value) => value && setIcon(value)}
+          size="small"
+          sx={{ flexWrap: 'wrap' }}
+        >
+          {LANDMARK_ICON_KEYS.map((key) => {
+            const { label, Icon } = LANDMARK_ICONS[key];
+            return (
+              <ToggleButton key={key} value={key} title={label} aria-label={label} sx={{ p: 0.75 }}>
+                <Icon fontSize="small" sx={{ color }} />
+              </ToggleButton>
+            );
+          })}
+        </ToggleButtonGroup>
+      </Box>
+      <StyleEditor color={color} onColorChange={setColor} />
       <Divider />
       <Box sx={{ display: 'flex', gap: 1 }}>
         <Button

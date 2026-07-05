@@ -1,6 +1,7 @@
 import { useState, type MutableRefObject } from 'react';
 import { Autocomplete, CircularProgress, TextField } from '@mui/material';
 import { useGeocode, type NominatimResult } from '../../hooks/useGeocode';
+import { POINT_FLY_ZOOM } from '../../types/api';
 import type L from 'leaflet';
 
 interface Props {
@@ -13,7 +14,7 @@ export function SearchBar({ mapRef }: Props) {
 
   const handleSelect = (_: React.SyntheticEvent, value: NominatimResult | string | null) => {
     if (!value || typeof value === 'string') return;
-    mapRef.current?.flyTo([parseFloat(value.lat), parseFloat(value.lon)], 13, {
+    mapRef.current?.flyTo([parseFloat(value.lat), parseFloat(value.lon)], POINT_FLY_ZOOM, {
       duration: 1.25,
     });
   };
