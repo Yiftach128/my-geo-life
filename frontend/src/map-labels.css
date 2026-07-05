@@ -1,0 +1,13 @@
+.leaflet-tooltip.map-label {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  color: #000;
+  font-weight: 500;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.leaflet-tooltip.map-label::before {
+  display: none; /* remove the little tooltip arrow */
+}

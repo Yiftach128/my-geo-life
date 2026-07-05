@@ -1,0 +1,8 @@
+# accidentally-committed local files — keep out of git
+domain.txt
+plan.txt
+pass.txt
+
+# common secret files
+.env
+*.env
