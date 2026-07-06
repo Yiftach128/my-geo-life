@@ -35,7 +35,6 @@ export function LayerToggles({ visibility, onChange, disabled }: Props) {
           value={active}
           onChange={handleChange}
           size="small"
-          sx={{ bgcolor: 'white', borderRadius: 1 }}
           disabled={disabled}
         >
           <ToggleButton value="landmarks" title="Landmarks" aria-label="Landmarks" sx={{ px: 1 }}>

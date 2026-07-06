@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { addressSchema } from './address.schema.js';
+import { Address } from '../domain/user.entity.js';
 
 export const createUserSchema = z.object({
   name: z
@@ -10,11 +12,7 @@ export const createUserSchema = z.object({
     .string()
     .min(8, { message: 'Password must be at least 8 characters' })
     .max(64, { message: 'Password must be less than 64 characters' }),
-  age: z
-    .number()
-    .min(0, { message: 'Age must be a positive number' })
-    .max(120, { message: 'Age must be less than 120' })
-    .optional(),
+  address: addressSchema.optional(),
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
@@ -24,12 +22,12 @@ export class CreateUserDto {
   readonly name: string;
   readonly email: string;
   readonly password: string;
-  readonly age?: number;
+  readonly address?: Address;
 
   constructor(data: CreateUserInput) {
     this.name = data.name;
     this.email = data.email;
     this.password = data.password;
-    this.age = data.age;
+    this.address = data.address;
   }
 }

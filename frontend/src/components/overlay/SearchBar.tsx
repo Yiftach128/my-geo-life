@@ -35,7 +35,7 @@ export function SearchBar({ mapRef }: Props) {
       }}
       onChange={handleSelect}
       loading={loading}
-      sx={{ width: 300, bgcolor: 'white', borderRadius: 1 }}
+      sx={{ width: 450 }}
       renderInput={(params) => (
         <TextField
           {...params}

@@ -33,7 +33,7 @@ export class AuthService implements IAuthService {
       name: dto.name,
       email: dto.email,
       passwordHash,
-      age: dto.age,
+      address: dto.address,
     });
 
     const token = await this.tokenService.sign({ id: user.id, version: user.tokenVersion });

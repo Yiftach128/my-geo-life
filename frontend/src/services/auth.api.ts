@@ -1,11 +1,11 @@
 import { apiFetch } from './api-client';
-import type { AuthResponse } from '../types/api';
+import type { AuthResponse, Address } from '../types/api';
 
 interface RegisterPayload {
   name: string;
   email: string;
   password: string;
-  age?: number;
+  address?: Address;
 }
 
 interface LoginPayload {

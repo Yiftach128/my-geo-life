@@ -42,7 +42,7 @@ export class UserRepository implements IUserRepository {
         name: data.name,
         email: data.email,
         password: data.passwordHash,
-        age: data.age,
+        address: data.address,
       });
       return UserMapper.toDomain(doc);
     } catch (err) {
@@ -60,7 +60,7 @@ export class UserRepository implements IUserRepository {
     if (data.name !== undefined) update.name = data.name;
     if (data.email !== undefined) update.email = data.email;
     if (data.passwordHash !== undefined) update.password = data.passwordHash;
-    if (data.age !== undefined) update.age = data.age;
+    if (data.address !== undefined) update.address = data.address;
 
     try {
       const doc = await this.model.findByIdAndUpdate(id, update, { new: true });

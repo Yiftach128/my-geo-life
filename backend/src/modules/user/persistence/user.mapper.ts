@@ -15,7 +15,9 @@ export class UserMapper {
       passwordHash: doc.password,
       tokenVersion: doc.tokenVersion,
       createdAt: doc.createdAt,
-      age: doc.age,
+      address: doc.address
+        ? { label: doc.address.label, lat: doc.address.lat, lon: doc.address.lon }
+        : undefined,
     });
   }
 }

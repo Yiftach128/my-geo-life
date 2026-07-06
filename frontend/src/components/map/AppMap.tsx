@@ -1,6 +1,7 @@
-import { type MutableRefObject } from 'react';
+import { useMemo, type MutableRefObject } from 'react';
 import { MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
 import { MapRefCapture } from './MapRefCapture';
+import { MapViewPersistence, readMapView } from './MapViewPersistence';
 import { MapClickHandler } from './MapClickHandler';
 import { LandmarkLayer } from './LandmarkLayer';
 import { CircleLayer } from './CircleLayer';
@@ -37,10 +38,12 @@ export function AppMap({
   isAuthenticated,
   onSelectItem,
 }: Props) {
+  // Read the saved view once at mount; react-leaflet only reads these props on first mount.
+  const initialView = useMemo(readMapView, []);
   return (
     <MapContainer
-      center={[31.77, 35.21]}
-      zoom={8}
+      center={initialView.center}
+      zoom={initialView.zoom}
       style={{ width: '100%', height: '100%' }}
       zoomControl={false}
       preferCanvas={true}
@@ -53,6 +56,7 @@ export function AppMap({
       />
       <ZoomControl position="bottomleft" />
       <MapRefCapture mapRef={mapRef} />
+      <MapViewPersistence />
       <MapClickHandler drawingMode={drawingMode} />
       <DrawingPreview drawingState={drawingMode.state} />
 

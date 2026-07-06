@@ -33,7 +33,7 @@ export class InMemoryUserRepository implements IUserRepository {
       passwordHash: data.passwordHash,
       tokenVersion: 0,
       createdAt: new Date(),
-      age: data.age,
+      address: data.address,
     });
     this.users.push(user);
     return user;
@@ -45,7 +45,7 @@ export class InMemoryUserRepository implements IUserRepository {
     if (data.name !== undefined) user.name = data.name;
     if (data.email !== undefined) user.email = data.email;
     if (data.passwordHash !== undefined) user.passwordHash = data.passwordHash;
-    if (data.age !== undefined) user.age = data.age;
+    if (data.address !== undefined) user.address = data.address;
     return user;
   }
 

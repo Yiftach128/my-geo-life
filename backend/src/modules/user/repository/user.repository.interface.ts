@@ -1,11 +1,11 @@
-import { User } from '../domain/user.entity.js';
+import { User, Address } from '../domain/user.entity.js';
 
 /** Already-hashed creation payload (the service hashes before calling). */
 export interface CreateUserData {
   name: string;
   email: string;
   passwordHash: string;
-  age?: number;
+  address?: Address;
 }
 
 /** Partial, already-hashed update payload. Undefined fields are ignored. */
@@ -13,7 +13,7 @@ export interface UpdateUserData {
   name?: string;
   email?: string;
   passwordHash?: string;
-  age?: number;
+  address?: Address;
 }
 
 /**

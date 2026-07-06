@@ -8,6 +8,7 @@ interface AuthContextValue {
   token: string | null;
   isAuthenticated: boolean;
   login: (user: UserDto, token: string) => void;
+  updateUser: (user: UserDto) => void;
   logout: () => void;
 }
 
@@ -37,6 +38,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', newToken);
   }, []);
 
+  const updateUser = useCallback((nextUser: UserDto) => {
+    setUser(nextUser);
+    localStorage.setItem('user', JSON.stringify(nextUser));
+  }, []);
+
   const logout = useCallback(() => {
     authApi.logout().catch(() => {});
     setUser(null);
@@ -47,8 +53,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   const value = useMemo(
-    () => ({ user, token, isAuthenticated: token !== null && user !== null, login, logout }),
-    [user, token, login, logout],
+    () => ({
+      user,
+      token,
+      isAuthenticated: token !== null && user !== null,
+      login,
+      updateUser,
+      logout,
+    }),
+    [user, token, login, updateUser, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -2,8 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { UserService } from '../src/modules/user/user.service.js';
 import { CreateUserDto } from '../src/modules/user/dto/create-user.dto.js';
 import { UpdateUserDto } from '../src/modules/user/dto/update-user.dto.js';
+import { ChangePasswordDto } from '../src/modules/user/dto/change-password.dto.js';
 import { InMemoryUserRepository } from './helpers/in-memory-user.repository.js';
-import { NotFoundError, ConflictError } from '../src/shared/errors/index.js';
+import { NotFoundError, ConflictError, UnauthorizedError } from '../src/shared/errors/index.js';
 import { IPasswordHasher } from '../src/shared/security/password-hasher.js';
 
 class FakeHasher implements IPasswordHasher {
@@ -51,9 +52,23 @@ describe('UserService', () => {
     await expect(service.delete('nope')).rejects.toBeInstanceOf(NotFoundError);
   });
 
-  it('hashes the password on update when one is supplied', async () => {
+  it('hashes the new password on change when the current password matches', async () => {
     const user = await create();
-    const updated = await service.update(user.id, new UpdateUserDto({ password: 'brandnew1' }));
+    await service.changePassword(
+      user.id,
+      new ChangePasswordDto({ oldPassword: 'secret123', newPassword: 'brandnew1' }),
+    );
+    const updated = await service.getById(user.id);
     expect(updated.passwordHash).toBe('hashed:brandnew1');
+  });
+
+  it('rejects a password change when the current password is wrong', async () => {
+    const user = await create();
+    await expect(
+      service.changePassword(
+        user.id,
+        new ChangePasswordDto({ oldPassword: 'wrongpass', newPassword: 'brandnew1' }),
+      ),
+    ).rejects.toBeInstanceOf(UnauthorizedError);
   });
 });

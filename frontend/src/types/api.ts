@@ -25,12 +25,19 @@ export const DEFAULT_GEO_STYLE: GeoStyle = {
   fillOpacity: 0.2,
 };
 
+/** A geocoded address: the picked location's display label plus its coordinates. */
+export interface Address {
+  label: string;
+  lat: number;
+  lon: number;
+}
+
 export interface UserDto {
   id: string;
   name: string;
   email: string;
   createdAt: string;
-  age?: number;
+  address?: Address;
 }
 
 export interface AuthResponse {

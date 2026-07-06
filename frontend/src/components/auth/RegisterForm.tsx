@@ -3,6 +3,8 @@ import { Alert, Box, Button, CircularProgress, TextField } from '@mui/material';
 import { authApi } from '../../services/auth.api';
 import { useAuth } from '../../hooks/useAuth';
 import { ApiError } from '../../services/api-client';
+import { AddressAutocomplete } from '../common/AddressAutocomplete';
+import type { Address } from '../../types/api';
 
 interface Props {
   onSuccess: () => void;
@@ -13,7 +15,7 @@ export function RegisterForm({ onSuccess }: Props) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [age, setAge] = useState('');
+  const [address, setAddress] = useState<Address | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -28,7 +30,7 @@ export function RegisterForm({ onSuccess }: Props) {
         name,
         email,
         password,
-        age: age ? parseInt(age, 10) : undefined,
+        address: address ?? undefined,
       });
       login(res.user, res.token);
       onSuccess();
@@ -65,13 +67,7 @@ export function RegisterForm({ onSuccess }: Props) {
         required
         inputProps={{ minLength: 8, maxLength: 64 }}
       />
-      <TextField
-        label="Age (optional)"
-        type="number"
-        value={age}
-        onChange={(e) => setAge(e.target.value)}
-        inputProps={{ min: 0, max: 120 }}
-      />
+      <AddressAutocomplete value={address} onChange={setAddress} />
       <Button type="submit" variant="contained" disabled={loading}>
         {loading ? <CircularProgress size={20} /> : 'Register'}
       </Button>

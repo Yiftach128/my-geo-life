@@ -8,13 +8,16 @@ import { LayerToggles } from '../components/overlay/LayerToggles';
 import { AddItemButton } from '../components/overlay/AddItemButton';
 import { MapObjectsList } from '../components/overlay/MapObjectsList';
 import { DrawingModeBanner } from '../components/overlay/DrawingModeBanner';
+import { BrandLogo } from '../components/overlay/BrandLogo';
 import { SidePanel } from '../components/panel/SidePanel';
 import { AuthModal } from '../components/auth/AuthModal';
+import { ProfileModal } from '../components/profile/ProfileModal';
 import { useAuth } from '../hooks/useAuth';
 import { useLandmarks } from '../hooks/useLandmarks';
 import { useCircles } from '../hooks/useCircles';
 import { usePolygons } from '../hooks/usePolygons';
 import { useDrawingMode } from '../hooks/useDrawingMode';
+import { usePersistentState } from '../hooks/usePersistentState';
 import type { SelectedItem } from '../types/api';
 
 interface LayerVisibility {
@@ -29,11 +32,11 @@ export default function MapPage() {
 
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [layerVisibility, setLayerVisibility] = useState<LayerVisibility>({
-    landmarks: true,
-    circles: true,
-    polygons: true,
-  });
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [layerVisibility, setLayerVisibility] = usePersistentState<LayerVisibility>(
+    'ui.layerVisibility',
+    { landmarks: true, circles: true, polygons: true },
+  );
 
   const drawingMode = useDrawingMode({
     onItemCreated: setSelectedItem,
@@ -75,12 +78,16 @@ export default function MapPage() {
             top: 16,
             left: 16,
             display: 'flex',
-            flexDirection: 'column',
+            flexDirection: 'row',
+            alignItems: 'center',
             gap: 1,
             pointerEvents: 'auto',
           }}
         >
-          <AuthButton onSignInClick={() => setAuthModalOpen(true)} />
+          <AuthButton
+            onSignInClick={() => setAuthModalOpen(true)}
+            onManageProfileClick={() => setProfileModalOpen(true)}
+          />
           <SearchBar mapRef={mapRef} />
         </Box>
 
@@ -122,6 +129,11 @@ export default function MapPage() {
           dispatch={drawingMode.dispatch}
           isSubmitting={drawingMode.isSubmitting}
         />
+
+        {/* Bottom-right: brand logo (decorative — pointerEvents left off so the map stays draggable) */}
+        <Box sx={{ position: 'absolute', bottom: 28, right: 16 }}>
+          <BrandLogo />
+        </Box>
       </Box>
 
       {/* Side panel */}
@@ -129,6 +141,9 @@ export default function MapPage() {
 
       {/* Auth modal */}
       <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+
+      {/* Manage-profile modal */}
+      <ProfileModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
     </Box>
   );
 }

@@ -1,3 +1,10 @@
+/** A geocoded address: the picked location's display label plus its coordinates. */
+export interface Address {
+  label: string;
+  lat: number;
+  lon: number;
+}
+
 export interface UserProps {
   id: string;
   name: string;
@@ -5,7 +12,7 @@ export interface UserProps {
   passwordHash: string;
   tokenVersion: number;
   createdAt: Date;
-  age?: number;
+  address?: Address;
 }
 
 /**
@@ -20,7 +27,7 @@ export class User {
   passwordHash: string;
   tokenVersion: number;
   readonly createdAt: Date;
-  age?: number;
+  address?: Address;
 
   constructor(props: UserProps) {
     this.id = props.id;
@@ -29,6 +36,6 @@ export class User {
     this.passwordHash = props.passwordHash;
     this.tokenVersion = props.tokenVersion;
     this.createdAt = props.createdAt;
-    this.age = props.age;
+    this.address = props.address;
   }
 }

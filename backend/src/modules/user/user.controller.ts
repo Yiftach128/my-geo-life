@@ -3,6 +3,7 @@ import { IUserService } from './user.service.js';
 import { UserResponseDto } from './dto/user-response.dto.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
 
 /**
  * Thin HTTP adapter: read the validated DTO off the request, call the service,
@@ -30,6 +31,11 @@ export class UserController {
   update = async (req: Request, res: Response): Promise<void> => {
     const user = await this.userService.update(req.params.id as string, req.dto as UpdateUserDto);
     res.json(UserResponseDto.fromDomain(user));
+  };
+
+  changePassword = async (req: Request, res: Response): Promise<void> => {
+    await this.userService.changePassword(req.params.id as string, req.dto as ChangePasswordDto);
+    res.sendStatus(204);
   };
 
   delete = async (req: Request, res: Response): Promise<void> => {

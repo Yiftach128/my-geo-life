@@ -1,4 +1,4 @@
-import { User } from '../domain/user.entity.js';
+import { User, Address } from '../domain/user.entity.js';
 
 /**
  * Outbound DTO. Translating a domain User through this is what guarantees
@@ -10,20 +10,20 @@ export class UserResponseDto {
   readonly name: string;
   readonly email: string;
   readonly createdAt: Date;
-  readonly age?: number;
+  readonly address?: Address;
 
   private constructor(props: {
     id: string;
     name: string;
     email: string;
     createdAt: Date;
-    age?: number;
+    address?: Address;
   }) {
     this.id = props.id;
     this.name = props.name;
     this.email = props.email;
     this.createdAt = props.createdAt;
-    this.age = props.age;
+    this.address = props.address;
   }
 
   static fromDomain(user: User): UserResponseDto {
@@ -32,7 +32,7 @@ export class UserResponseDto {
       name: user.name,
       email: user.email,
       createdAt: user.createdAt,
-      age: user.age,
+      address: user.address,
     });
   }
 }

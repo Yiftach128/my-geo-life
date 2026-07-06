@@ -3,13 +3,15 @@ import { IPasswordHasher } from '../../shared/security/password-hasher.js';
 import { User } from './domain/user.entity.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
-import { NotFoundError, ConflictError } from '../../shared/errors/index.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
+import { NotFoundError, ConflictError, UnauthorizedError } from '../../shared/errors/index.js';
 
 export interface IUserService {
   getAll(): Promise<User[]>;
   getById(id: string): Promise<User>;
   create(dto: CreateUserDto): Promise<User>;
   update(id: string, dto: UpdateUserDto): Promise<User>;
+  changePassword(id: string, dto: ChangePasswordDto): Promise<void>;
   delete(id: string): Promise<void>;
 }
 
@@ -38,34 +40,27 @@ export class UserService implements IUserService {
       name: dto.name,
       email: dto.email,
       passwordHash,
-      age: dto.age,
+      address: dto.address,
     });
   }
 
   async update(id: string, dto: UpdateUserDto): Promise<User> {
-    if (dto.email) {
-      const existing = await this.userRepository.findByEmail(dto.email);
-      if (existing && existing.id !== id) throw new ConflictError('Email already in use');
-    }
-
-    // const passwordHash = dto.password
-    //   ? await this.passwordHasher.hash(dto.password)
-    //   : undefined;
-    let passwordHash: string | undefined;
-    if (dto.password) {
-      passwordHash = await this.passwordHasher.hash(dto.password);
-    } else {
-      passwordHash = undefined;
-    }
-
     const updated = await this.userRepository.update(id, {
       name: dto.name,
-      email: dto.email,
-      age: dto.age,
-      passwordHash,
+      address: dto.address,
     });
     if (!updated) throw new NotFoundError('User not found');
     return updated;
+  }
+
+  async changePassword(id: string, dto: ChangePasswordDto): Promise<void> {
+    const user = await this.getById(id); // throws NotFoundError when missing
+
+    const isMatch = await this.passwordHasher.compare(dto.oldPassword, user.passwordHash);
+    if (!isMatch) throw new UnauthorizedError('Current password is incorrect');
+
+    const passwordHash = await this.passwordHasher.hash(dto.newPassword);
+    await this.userRepository.update(id, { passwordHash });
   }
 
   async delete(id: string): Promise<void> {

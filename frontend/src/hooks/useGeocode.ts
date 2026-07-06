@@ -7,6 +7,18 @@ export interface NominatimResult {
   lon: string;
 }
 
+/**
+ * Nominatim's display_name is long and comma-heavy. Keep the 3 most specific
+ * leading segments plus the country (last segment) — enough to identify a
+ * place without the middle noise. Short names (<= 3 parts) are returned as-is.
+ */
+function shortenDisplayName(name: string): string {
+  const parts = name.split(',').map((p) => p.trim()).filter(Boolean);
+  if (parts.length <= 3) return parts.join(', ');
+  const country = parts[parts.length - 1];
+  return [...parts.slice(0, 3), country].join(', ');
+}
+
 export function useGeocode() {
   const [results, setResults] = useState<NominatimResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -33,7 +45,7 @@ export function useGeocode() {
           { headers: { 'Accept-Language': 'en' }, signal: controller.signal },
         );
         const data: NominatimResult[] = await res.json();
-        setResults(data);
+        setResults(data.map((r) => ({ ...r, display_name: shortenDisplayName(r.display_name) })));
         setLoading(false);
       } catch (err) {
         if ((err as Error).name === 'AbortError') return; // superseded by a newer query

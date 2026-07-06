@@ -1,4 +1,4 @@
-import { useState, type MutableRefObject } from 'react';
+import { type MutableRefObject } from 'react';
 import {
   Box,
   ButtonBase,
@@ -17,6 +17,8 @@ import PentagonOutlinedIcon from '@mui/icons-material/PentagonOutlined';
 import L from 'leaflet';
 import { POINT_FLY_ZOOM, type CircleDto, type LandmarkDto, type PolygonDto, type SelectedItem } from '../../types/api';
 import { LANDMARK_ICONS, resolveIconKey } from '../map/landmarkIcons';
+import { useAuth } from '../../hooks/useAuth';
+import { usePersistentState } from '../../hooks/usePersistentState';
 
 interface LayerVisibility {
   landmarks: boolean;
@@ -48,7 +50,8 @@ function ItemIcon({ selected }: { selected: SelectedItem }) {
 }
 
 export function MapObjectsList({ landmarks, circles, polygons, visibility, mapRef }: Props) {
-  const [open, setOpen] = useState(false);
+  const { user } = useAuth();
+  const [open, setOpen] = usePersistentState<boolean>('ui.objectsListOpen', true);
 
   const items: SelectedItem[] = [
     ...(visibility.landmarks ? landmarks.map((item) => ({ type: 'landmark', item }) as const) : []),
@@ -78,7 +81,7 @@ export function MapObjectsList({ landmarks, circles, polygons, visibility, mapRe
       <Collapse in={open} orientation="horizontal" timeout="auto" unmountOnExit>
         <Box sx={{ width: 280, display: 'flex', flexDirection: 'column' }}>
           <Typography variant="subtitle2" sx={{ px: 2, py: 1 }}>
-            My markers ({items.length})
+            {user ? `${user.name}'s objects` : 'My markers'} ({items.length})
           </Typography>
           {items.length === 0 ? (
             <Box sx={{ px: 2, pb: 1.5 }}>

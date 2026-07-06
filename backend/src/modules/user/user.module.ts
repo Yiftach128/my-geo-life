@@ -11,6 +11,7 @@ import { validateBody } from '../../shared/http/validate-body.js';
 import { createAuthenticate } from '../../shared/http/authenticate.js';
 import { createUserSchema, CreateUserDto } from './dto/create-user.dto.js';
 import { updateUserSchema, UpdateUserDto } from './dto/update-user.dto.js';
+import { changePasswordSchema, ChangePasswordDto } from './dto/change-password.dto.js';
 
 export interface UserModuleDeps {
   passwordHasher: IPasswordHasher;
@@ -42,6 +43,11 @@ export function buildUserModule(deps: UserModuleDeps): UserModule {
   //validateBody(CreateUserDto: the constructor of this class) - does validation + attacthes DTO to req
   router.post('/', validateBody(createUserSchema, CreateUserDto), asyncHandler(controller.create));
   router.put('/:id', validateBody(updateUserSchema, UpdateUserDto), asyncHandler(controller.update));
+  router.put(
+    '/passwordchange/:id',
+    validateBody(changePasswordSchema, ChangePasswordDto),
+    asyncHandler(controller.changePassword),
+  );
   router.delete('/:id', asyncHandler(controller.delete));
 
   return { router, userRepository };

@@ -9,17 +9,27 @@ export interface IUserSchema {
   name: string;
   email: string;
   password: string;
-  age?: number;
+  address?: { label: string; lat: number; lon: number };
   tokenVersion: number;
   createdAt: Date;
 }
+
+// Nested (no own _id); the whole path stays undefined until an address is saved.
+const addressSubSchema = new Schema(
+  {
+    label: { type: String, required: true },
+    lat: { type: Number, required: true },
+    lon: { type: Number, required: true },
+  },
+  { _id: false },
+);
 
 const userSchema = new Schema<IUserSchema>(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    age: { type: Number },
+    address: { type: addressSubSchema },
     tokenVersion: { type: Number, default: 0 },
     createdAt: { type: Date, default: Date.now },
   },
