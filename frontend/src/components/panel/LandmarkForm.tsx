@@ -5,13 +5,14 @@ import {
   CircularProgress,
   Divider,
   TextField,
-  ToggleButton,
   ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import { StyleEditor } from './StyleEditor';
+import { TooltipToggleButton } from '../common/TooltipToggleButton';
 import { LANDMARK_ICONS, LANDMARK_ICON_KEYS, resolveIconKey } from '../map/landmarkIcons';
 import { useUpdateLandmark, useDeleteLandmark } from '../../hooks/useLandmarks';
+import { useReverseGeocode } from '../../hooks/useGeocode';
 import type { LandmarkDto } from '../../types/api';
 
 interface Props {
@@ -24,6 +25,11 @@ export function LandmarkForm({ item, onClose }: Props) {
   const [description, setDescription] = useState(item.description ?? '');
   const [color, setColor] = useState(item.color);
   const [icon, setIcon] = useState(resolveIconKey(item.iconUrl));
+
+  const { data: address, isFetching: addressLoading } = useReverseGeocode(
+    item.position.lat,
+    item.position.lng,
+  );
 
   const update = useUpdateLandmark();
   const del = useDeleteLandmark();
@@ -44,6 +50,9 @@ export function LandmarkForm({ item, onClose }: Props) {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Typography variant="subtitle1" fontWeight="bold">
         Landmark
+      </Typography>
+      <Typography variant="caption" color="text.secondary">
+        {addressLoading ? 'Resolving address…' : (address ?? 'Address unavailable')}
       </Typography>
       <TextField
         label="Name"
@@ -76,9 +85,9 @@ export function LandmarkForm({ item, onClose }: Props) {
           {LANDMARK_ICON_KEYS.map((key) => {
             const { label, Icon } = LANDMARK_ICONS[key];
             return (
-              <ToggleButton key={key} value={key} title={label} aria-label={label} sx={{ p: 0.75 }}>
+              <TooltipToggleButton key={key} value={key} tooltip={label} aria-label={label} sx={{ p: 0.75 }}>
                 <Icon fontSize="small" sx={{ color }} />
-              </ToggleButton>
+              </TooltipToggleButton>
             );
           })}
         </ToggleButtonGroup>

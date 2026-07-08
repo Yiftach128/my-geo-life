@@ -11,3 +11,17 @@
 .leaflet-tooltip.map-label::before {
   display: none; /* remove the little tooltip arrow */
 }
+
+/* Interactive click-to-address popup anchored to the right of the probe pin. Keep the
+   default tooltip box + arrow (which points left at the pin) and let the buttons receive
+   clicks. `width: max-content` is the key: a Leaflet tooltip is position:absolute with no
+   width, so it otherwise shrink-wraps to min-content (one word per line). max-content sizes
+   it to its natural one-line width; max-width then caps it and (white-space:normal) lets a
+   very long address wrap down to a second line instead of stretching wide. */
+.leaflet-tooltip.probe-popup {
+  white-space: normal;
+  width: max-content;
+  max-width: 360px;
+  padding: 2px 4px;
+  pointer-events: auto;
+}

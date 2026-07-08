@@ -31,14 +31,18 @@ export function MapClickHandler({ drawingMode }: Props) {
         }
       }
 
-      void handleMapClick({ lat: e.latlng.lat, lng: e.latlng.lng });
+      // Wrap lng into [-180, 180] so items placed on a wrapped world copy (map
+      // panned past the antimeridian) store canonical, in-range coordinates.
+      const ll = e.latlng.wrap();
+      void handleMapClick({ lat: ll.lat, lng: ll.lng });
     },
     mousemove(e) {
+      const ll = e.latlng.wrap();
       if (state.mode === 'circle-radius') {
-        const radius = L.latLng(state.center.lat, state.center.lng).distanceTo(e.latlng);
+        const radius = L.latLng(state.center.lat, state.center.lng).distanceTo(ll);
         dispatch({ type: 'UPDATE_PREVIEW_RADIUS', radius });
       } else if (state.mode === 'polygon') {
-        dispatch({ type: 'UPDATE_CURSOR', pos: { lat: e.latlng.lat, lng: e.latlng.lng } });
+        dispatch({ type: 'UPDATE_CURSOR', pos: { lat: ll.lat, lng: ll.lng } });
       }
     },
   });

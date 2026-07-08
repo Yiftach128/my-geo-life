@@ -1,4 +1,5 @@
 import { Circle, Tooltip } from 'react-leaflet';
+import type { LeafletMouseEvent } from 'leaflet';
 import { useLabelsVisible } from '../../hooks/useLabelsVisible';
 import { toPathOptions } from '../../types/api';
 import type { CircleDto, SelectedItem } from '../../types/api';
@@ -6,9 +7,10 @@ import type { CircleDto, SelectedItem } from '../../types/api';
 interface Props {
   circles: CircleDto[];
   onSelect: (item: SelectedItem) => void;
+  onContextMenu: (item: SelectedItem, e: LeafletMouseEvent) => void;
 }
 
-export function CircleLayer({ circles, onSelect }: Props) {
+export function CircleLayer({ circles, onSelect, onContextMenu }: Props) {
   const showLabels = useLabelsVisible();
   return (
     <>
@@ -18,7 +20,11 @@ export function CircleLayer({ circles, onSelect }: Props) {
           center={[circle.center.lat, circle.center.lng]}
           radius={circle.radius}
           pathOptions={toPathOptions(circle.style)}
-          eventHandlers={{ click: () => onSelect({ type: 'circle', item: circle }) }}
+          bubblingMouseEvents={false}
+          eventHandlers={{
+            click: () => onSelect({ type: 'circle', item: circle }),
+            contextmenu: (e) => onContextMenu({ type: 'circle', item: circle }, e),
+          }}
         >
           {showLabels && (
             <Tooltip permanent direction="center" className="map-label">

@@ -1,4 +1,5 @@
 import { Polygon, Tooltip } from 'react-leaflet';
+import type { LeafletMouseEvent } from 'leaflet';
 import { useLabelsVisible } from '../../hooks/useLabelsVisible';
 import { toPathOptions } from '../../types/api';
 import type { PolygonDto, SelectedItem } from '../../types/api';
@@ -6,9 +7,10 @@ import type { PolygonDto, SelectedItem } from '../../types/api';
 interface Props {
   polygons: PolygonDto[];
   onSelect: (item: SelectedItem) => void;
+  onContextMenu: (item: SelectedItem, e: LeafletMouseEvent) => void;
 }
 
-export function PolygonLayer({ polygons, onSelect }: Props) {
+export function PolygonLayer({ polygons, onSelect, onContextMenu }: Props) {
   const showLabels = useLabelsVisible();
   return (
     <>
@@ -17,7 +19,11 @@ export function PolygonLayer({ polygons, onSelect }: Props) {
           key={polygon.id}
           positions={polygon.points.map((p) => [p.lat, p.lng] as [number, number])}
           pathOptions={toPathOptions(polygon.style)}
-          eventHandlers={{ click: () => onSelect({ type: 'polygon', item: polygon }) }}
+          bubblingMouseEvents={false}
+          eventHandlers={{
+            click: () => onSelect({ type: 'polygon', item: polygon }),
+            contextmenu: (e) => onContextMenu({ type: 'polygon', item: polygon }, e),
+          }}
         >
           {showLabels && (
             <Tooltip permanent direction="center" className="map-label">

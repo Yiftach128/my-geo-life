@@ -5,6 +5,7 @@ import { createAuthenticate } from '../../shared/http/authenticate.js';
 import { buildLandmarkModule } from './landmark/landmark.module.js';
 import { buildCircleModule } from './circle/circle.module.js';
 import { buildPolygonModule } from './polygon/polygon.module.js';
+import { buildGeocodeModule } from './geocode/geocode.module.js';
 
 export interface GeoModuleDeps {
   tokenService: ITokenService;
@@ -23,6 +24,7 @@ export function buildGeoModule(deps: GeoModuleDeps): Router {
   router.use('/landmarks', buildLandmarkModule({ authenticate }));
   router.use('/circles', buildCircleModule({ authenticate }));
   router.use('/polygons', buildPolygonModule({ authenticate }));
+  router.use('/geocode', buildGeocodeModule()); // public: search/probe work signed-out
 
   return router;
 }

@@ -8,6 +8,11 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   PORT: z.coerce.number().default(3000),
+  GEOCODER_BASE_URL: z.string().url().default('https://nominatim.openstreetmap.org'),
+  // Nominatim rejects stock library/browser User-Agents. App name only by default —
+  // no personal info in committed code; override in a local .env to add a contact.
+  GEOCODER_USER_AGENT: z.string().min(1).default('Geo_app/1.0'),
+  GEOCODER_LANGUAGE: z.string().default('he,en'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -27,6 +32,9 @@ export const config = {
   jwtSecret: parsed.data.JWT_SECRET,
   jwtExpiresIn: parsed.data.JWT_EXPIRES_IN,
   port: parsed.data.PORT,
+  geocoderBaseUrl: parsed.data.GEOCODER_BASE_URL,
+  geocoderUserAgent: parsed.data.GEOCODER_USER_AGENT,
+  geocoderLanguage: parsed.data.GEOCODER_LANGUAGE,
 } as const;
 
 export type Config = typeof config;

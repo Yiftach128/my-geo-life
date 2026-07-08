@@ -1,26 +1,16 @@
 import { useCallback, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
-export interface NominatimResult {
+/** A search suggestion as shaped by our backend: numeric coords + a short label. */
+export interface GeocodeResult {
   place_id: number;
-  display_name: string;
-  lat: string;
-  lon: string;
-}
-
-/**
- * Nominatim's display_name is long and comma-heavy. Keep the 3 most specific
- * leading segments plus the country (last segment) — enough to identify a
- * place without the middle noise. Short names (<= 3 parts) are returned as-is.
- */
-function shortenDisplayName(name: string): string {
-  const parts = name.split(',').map((p) => p.trim()).filter(Boolean);
-  if (parts.length <= 3) return parts.join(', ');
-  const country = parts[parts.length - 1];
-  return [...parts.slice(0, 3), country].join(', ');
+  lat: number;
+  lon: number;
+  label: string;
 }
 
 export function useGeocode() {
-  const [results, setResults] = useState<NominatimResult[]>([]);
+  const [results, setResults] = useState<GeocodeResult[]>([]);
   const [loading, setLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -40,12 +30,20 @@ export function useGeocode() {
       const controller = new AbortController();
       abortRef.current = controller;
       try {
+        // Proxied through our backend (see backend geocode module): adds an
+        // identifying User-Agent, throttles to Nominatim's 1 req/sec, caches, and
+        // shapes each result (numeric coords + shortened label) so we render it as-is.
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`,
-          { headers: { 'Accept-Language': 'en' }, signal: controller.signal },
+          `/api/geo/geocode/search?q=${encodeURIComponent(query)}&limit=5`,
+          { signal: controller.signal },
         );
-        const data: NominatimResult[] = await res.json();
-        setResults(data.map((r) => ({ ...r, display_name: shortenDisplayName(r.display_name) })));
+        if (!res.ok) {
+          setResults([]);
+          setLoading(false);
+          return;
+        }
+        const data: GeocodeResult[] = await res.json();
+        setResults(data);
         setLoading(false);
       } catch (err) {
         if ((err as Error).name === 'AbortError') return; // superseded by a newer query
@@ -56,4 +54,39 @@ export function useGeocode() {
   }, []);
 
   return { results, loading, search };
+}
+
+/**
+ * Reverse geocode: coordinates -> the backend's shortened display label.
+ * Goes through our backend proxy, which sets the User-Agent, language, throttle,
+ * and cache, and does the shortening — so this just returns its `label`. Throws on a
+ * non-OK response so callers can distinguish a failed lookup from an empty one.
+ * Note: Nominatim's longitude param is `lon`; our DTO `Point` uses `lng`, so callers
+ * must pass `point.lng` as the `lon` argument. Returns null when no place is found.
+ */
+export async function reverseGeocode(
+  lat: number,
+  lon: number,
+  signal?: AbortSignal,
+): Promise<string | null> {
+  const res = await fetch(
+    `/api/geo/geocode/reverse?lat=${lat}&lon=${lon}`,
+    { signal },
+  );
+  if (!res.ok) throw new Error(`reverse geocode failed: ${res.status}`);
+  const data: { label: string | null } = await res.json();
+  return data.label;
+}
+
+/**
+ * React Query wrapper around `reverseGeocode` for display in the edit forms. Cached
+ * forever per coordinate so re-selecting the same item doesn't re-hit Nominatim.
+ */
+export function useReverseGeocode(lat?: number, lon?: number) {
+  return useQuery({
+    queryKey: ['reverse-geocode', lat, lon],
+    queryFn: ({ signal }) => reverseGeocode(lat!, lon!, signal),
+    enabled: lat != null && lon != null,
+    staleTime: Infinity,
+  });
 }

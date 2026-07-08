@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Menu, MenuItem, Tooltip } from '@mui/material';
+import { Button, ListItemText, Menu, MenuItem, Tooltip } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import PlaceIcon from '@mui/icons-material/Place';
 import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
@@ -10,6 +10,13 @@ interface Props {
   dispatch: React.Dispatch<DrawingAction>;
   disabled?: boolean;
 }
+
+/** Menu rows, one per shape type. */
+const ITEMS = [
+  { action: 'START_LANDMARK', label: 'Landmark', Icon: PlaceIcon },
+  { action: 'START_CIRCLE', label: 'Circle', Icon: CircleOutlinedIcon },
+  { action: 'START_POLYGON', label: 'Polygon', Icon: PentagonOutlinedIcon },
+] as const;
 
 export function AddItemButton({ dispatch, disabled }: Props) {
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
@@ -24,7 +31,7 @@ export function AddItemButton({ dispatch, disabled }: Props) {
 
   return (
     <>
-      <Tooltip title={disabled ? 'Sign in to add items' : 'Add item'} placement="left">
+      <Tooltip title={disabled ? 'Sign in to add items' : 'Add item'} placement="bottom">
         <span>
           <Button
             variant="contained"
@@ -44,15 +51,17 @@ export function AddItemButton({ dispatch, disabled }: Props) {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <MenuItem onClick={() => select('START_LANDMARK')} title="Landmark" aria-label="Landmark" sx={{ justifyContent: 'center' }}>
-          <PlaceIcon fontSize="small" />
-        </MenuItem>
-        <MenuItem onClick={() => select('START_CIRCLE')} title="Circle" aria-label="Circle" sx={{ justifyContent: 'center' }}>
-          <CircleOutlinedIcon fontSize="small" />
-        </MenuItem>
-        <MenuItem onClick={() => select('START_POLYGON')} title="Polygon" aria-label="Polygon" sx={{ justifyContent: 'center' }}>
-          <PentagonOutlinedIcon fontSize="small" />
-        </MenuItem>
+        {ITEMS.map(({ action, label, Icon }) => (
+          <MenuItem
+            key={action}
+            onClick={() => select(action)}
+            aria-label={label}
+            sx={{ gap: 1.5, minWidth: 168, py: 1 }}
+          >
+            <ListItemText primary={label} />
+            <Icon fontSize="small" />
+          </MenuItem>
+        ))}
       </Menu>
     </>
   );

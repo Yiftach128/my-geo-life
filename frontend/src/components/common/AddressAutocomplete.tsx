@@ -28,7 +28,7 @@ export function AddressAutocomplete({ value, onChange, label = 'Address (optiona
       filterOptions={(x) => x}
       options={results}
       inputValue={inputValue}
-      getOptionLabel={(opt) => opt.display_name}
+      getOptionLabel={(opt) => opt.label}
       isOptionEqualToValue={(opt, val) => opt.place_id === val.place_id}
       onInputChange={(_, val, reason) => {
         if (reason === 'input') {
@@ -42,11 +42,11 @@ export function AddressAutocomplete({ value, onChange, label = 'Address (optiona
       onChange={(_, selected) => {
         if (selected) {
           onChange({
-            label: selected.display_name,
-            lat: parseFloat(selected.lat),
-            lon: parseFloat(selected.lon),
+            label: selected.label,
+            lat: selected.lat,
+            lon: selected.lon,
           });
-          setInputValue(selected.display_name);
+          setInputValue(selected.label);
         } else {
           onChange(null);
           setInputValue('');

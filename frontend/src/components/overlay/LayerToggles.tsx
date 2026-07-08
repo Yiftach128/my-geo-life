@@ -1,7 +1,8 @@
-import { Box, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
+import { Box, ToggleButtonGroup, Tooltip } from '@mui/material';
 import PlaceIcon from '@mui/icons-material/Place';
 import CircleOutlinedIcon from '@mui/icons-material/CircleOutlined';
 import PentagonOutlinedIcon from '@mui/icons-material/PentagonOutlined';
+import { TooltipToggleButton } from '../common/TooltipToggleButton';
 
 interface LayerVisibility {
   landmarks: boolean;
@@ -36,16 +37,31 @@ export function LayerToggles({ visibility, onChange, disabled }: Props) {
           onChange={handleChange}
           size="small"
           disabled={disabled}
+          sx={{
+            // Always-white buttons; on/off is carried by icon color, not a filled
+            // background (overrides the global grey[300] selected style in theme.ts).
+            '& .MuiToggleButton-root': {
+              color: 'grey.500', // off → light grey icon (via currentColor)
+              backgroundColor: '#fff',
+              '&:hover': { backgroundColor: 'grey.100' },
+              '&.Mui-selected': {
+                color: 'text.primary', // on → near-black icon
+                backgroundColor: '#fff',
+                '&:hover': { backgroundColor: 'grey.100' },
+              },
+              '&.Mui-disabled': { color: 'grey.400' }, // even lighter when signed out
+            },
+          }}
         >
-          <ToggleButton value="landmarks" title="Landmarks" aria-label="Landmarks" sx={{ px: 1 }}>
+          <TooltipToggleButton value="landmarks" tooltip="Toggle landmarks" aria-label="Landmarks" sx={{ px: 1 }}>
             <PlaceIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton value="circles" title="Circles" aria-label="Circles" sx={{ px: 1 }}>
+          </TooltipToggleButton>
+          <TooltipToggleButton value="circles" tooltip="Toggle circles" aria-label="Circles" sx={{ px: 1 }}>
             <CircleOutlinedIcon fontSize="small" />
-          </ToggleButton>
-          <ToggleButton value="polygons" title="Polygons" aria-label="Polygons" sx={{ px: 1 }}>
+          </TooltipToggleButton>
+          <TooltipToggleButton value="polygons" tooltip="Toggle polygons" aria-label="Polygons" sx={{ px: 1 }}>
             <PentagonOutlinedIcon fontSize="small" />
-          </ToggleButton>
+          </TooltipToggleButton>
         </ToggleButtonGroup>
       </Box>
     </Tooltip>

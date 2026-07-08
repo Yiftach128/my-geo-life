@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Button, CircularProgress, Divider, TextField, Typography } from '@mui/material';
 import { StyleEditor } from './StyleEditor';
 import { useUpdatePolygon, useDeletePolygon } from '../../hooks/usePolygons';
+import { useReverseGeocode } from '../../hooks/useGeocode';
 import type { PolygonDto, GeoStyle } from '../../types/api';
 
 interface Props {
@@ -15,6 +16,12 @@ export function PolygonForm({ item, onClose }: Props) {
   const [color, setColor] = useState(item.style.strokeColor);
   const [opacity, setOpacity] = useState(item.style.opacity);
   const [fillOpacity, setFillOpacity] = useState(item.style.fillOpacity);
+
+  // A polygon has no single location; use its first vertex as a representative point.
+  const { data: address, isFetching: addressLoading } = useReverseGeocode(
+    item.points[0]?.lat,
+    item.points[0]?.lng,
+  );
 
   const update = useUpdatePolygon();
   const del = useDeletePolygon();
@@ -46,6 +53,9 @@ export function PolygonForm({ item, onClose }: Props) {
       </Typography>
       <Typography variant="caption" color="text.secondary">
         {item.points.length} vertices
+      </Typography>
+      <Typography variant="caption" color="text.secondary">
+        {addressLoading ? 'Resolving address…' : (address ?? 'Address unavailable')}
       </Typography>
       <TextField
         label="Name"

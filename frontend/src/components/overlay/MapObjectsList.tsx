@@ -81,7 +81,7 @@ export function MapObjectsList({ landmarks, circles, polygons, visibility, mapRe
       <Collapse in={open} orientation="horizontal" timeout="auto" unmountOnExit>
         <Box sx={{ width: 280, display: 'flex', flexDirection: 'column' }}>
           <Typography variant="subtitle2" sx={{ px: 2, py: 1 }}>
-            {user ? `${user.name}'s objects` : 'My markers'} ({items.length})
+            {user ? `${user.name}'s objects` : 'My objects'} ({items.length})
           </Typography>
           {items.length === 0 ? (
             <Box sx={{ px: 2, pb: 1.5 }}>
