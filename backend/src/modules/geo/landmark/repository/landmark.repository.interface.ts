@@ -9,6 +9,7 @@ export interface CreateLandmarkData {
   position: Point;
   iconUrl?: string;
   color: string;
+  addressLabel: string | null;
 }
 
 /** Partial update payload. Undefined fields are ignored. */
@@ -18,6 +19,7 @@ export interface UpdateLandmarkData {
   position?: Point;
   iconUrl?: string;
   color?: string;
+  addressLabel?: string | null;
 }
 
 /**

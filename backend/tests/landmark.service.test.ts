@@ -4,17 +4,20 @@ import { CreateLandmarkDto } from '../src/modules/geo/landmark/dto/create-landma
 import { UpdateLandmarkDto } from '../src/modules/geo/landmark/dto/update-landmark.dto.js';
 import { InMemoryLandmarkRepository } from './helpers/in-memory-landmark.repository.js';
 import { NotFoundError } from '../src/shared/errors/index.js';
+import { StubGeocoder, ThrowingGeocoder } from './helpers/stub-geocoder.js';
 
 const OWNER_A = 'owner-a';
 const OWNER_B = 'owner-b';
 
 describe('LandmarkService', () => {
   let repo: InMemoryLandmarkRepository;
+  let geocoder: StubGeocoder;
   let service: LandmarkService;
 
   beforeEach(() => {
     repo = new InMemoryLandmarkRepository();
-    service = new LandmarkService(repo);
+    geocoder = new StubGeocoder('Somewhere, Country');
+    service = new LandmarkService(repo, geocoder);
   });
 
   const create = (ownerId = OWNER_A) =>
@@ -71,5 +74,40 @@ describe('LandmarkService', () => {
     const landmark = await create(OWNER_A);
     await service.delete(landmark.id, OWNER_A);
     await expect(service.getById(landmark.id, OWNER_A)).rejects.toBeInstanceOf(NotFoundError);
+  });
+
+  it('stores the reverse-geocoded address label of the position on create', async () => {
+    const landmark = await create(OWNER_A);
+    expect(landmark.addressLabel).toBe('Somewhere, Country');
+    expect(geocoder.calls).toEqual([{ lat: 32.08, lon: 34.78 }]);
+  });
+
+  it('still creates the landmark with a null label when reverse geocoding fails', async () => {
+    service = new LandmarkService(repo, new ThrowingGeocoder());
+    const landmark = await create(OWNER_A);
+    expect(landmark.addressLabel).toBeNull();
+  });
+
+  it('recomputes addressLabel when the position moves on update', async () => {
+    const landmark = await create(OWNER_A);
+    geocoder = new StubGeocoder('Elsewhere, Country');
+    service = new LandmarkService(repo, geocoder);
+    const updated = await service.update(
+      landmark.id,
+      new UpdateLandmarkDto({ position: { lat: 51.5, lng: -0.12 } }),
+      OWNER_A,
+    );
+    expect(updated.addressLabel).toBe('Elsewhere, Country');
+    expect(geocoder.calls).toEqual([{ lat: 51.5, lon: -0.12 }]);
+  });
+
+  it('leaves addressLabel untouched when the position is not part of the update', async () => {
+    const landmark = await create(OWNER_A);
+    const updated = await service.update(
+      landmark.id,
+      new UpdateLandmarkDto({ name: 'Renamed' }),
+      OWNER_A,
+    );
+    expect(updated.addressLabel).toBe('Somewhere, Country');
   });
 });

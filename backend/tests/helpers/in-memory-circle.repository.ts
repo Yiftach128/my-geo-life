@@ -27,6 +27,7 @@ export class InMemoryCircleRepository implements ICircleRepository {
       center: data.center,
       radius: data.radius,
       style: data.style,
+      addressLabel: data.addressLabel,
       createdAt: new Date(),
     });
     this.items.push(circle);
@@ -41,6 +42,7 @@ export class InMemoryCircleRepository implements ICircleRepository {
     if (data.center !== undefined) circle.center = data.center;
     if (data.radius !== undefined) circle.radius = data.radius;
     if (data.style !== undefined) circle.style = data.style;
+    if (data.addressLabel !== undefined) circle.addressLabel = data.addressLabel;
     return circle;
   }
 

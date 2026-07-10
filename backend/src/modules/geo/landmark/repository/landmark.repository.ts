@@ -30,6 +30,7 @@ export class LandmarkRepository implements ILandmarkRepository {
       position: data.position,
       iconUrl: data.iconUrl,
       color: data.color,
+      addressLabel: data.addressLabel,
     });
     return LandmarkMapper.toDomain(doc);
   }
@@ -47,6 +48,7 @@ export class LandmarkRepository implements ILandmarkRepository {
     if (data.position !== undefined) update.position = data.position;
     if (data.iconUrl !== undefined) update.iconUrl = data.iconUrl;
     if (data.color !== undefined) update.color = data.color;
+    if (data.addressLabel !== undefined) update.addressLabel = data.addressLabel;
 
     const doc = await this.model.findOneAndUpdate({ _id: id, owner: ownerId }, update, {
       new: true,

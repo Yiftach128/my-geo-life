@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { config } from '../../../shared/config/env.js';
 import { asyncHandler } from '../../../shared/http/async-handler.js';
 import { validateQuery } from '../../../shared/http/validate-query.js';
 import { GeocodingService } from './geocode.service.js';
@@ -7,16 +6,12 @@ import { GeocodingController } from './geocode.controller.js';
 import { searchQuerySchema, reverseQuerySchema } from './geocode.schemas.js';
 
 /**
- * Self-wires the geocoding proxy (service ← config → controller) and returns its
- * router. Public by design — the address search and click-to-address probe must
- * work signed-out — so no `authenticate` middleware. Mounted at `/api/geo/geocode`.
+ * Mounts the geocoding proxy's routes onto the shared GeocodingService (built
+ * once in the geo module so its throttle and cache are process-wide). Public by
+ * design — the address search and click-to-address probe must work signed-out —
+ * so no `authenticate` middleware. Mounted at `/api/geo/geocode`.
  */
-export function buildGeocodeModule(): Router {
-  const service = new GeocodingService({
-    baseUrl: config.geocoderBaseUrl,
-    userAgent: config.geocoderUserAgent,
-    language: config.geocoderLanguage,
-  });
+export function buildGeocodeModule(service: GeocodingService): Router {
   const controller = new GeocodingController(service);
 
   const router = Router();

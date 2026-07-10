@@ -9,6 +9,7 @@ export interface CircleProps {
   center: Point;
   radius: number;
   style: GeoStyle;
+  addressLabel: string | null;
   createdAt: Date;
 }
 
@@ -24,6 +25,7 @@ export class Circle {
   center: Point;
   radius: number;
   style: GeoStyle;
+  addressLabel: string | null;
   readonly createdAt: Date;
 
   constructor(props: CircleProps) {
@@ -34,6 +36,7 @@ export class Circle {
     this.center = props.center;
     this.radius = props.radius;
     this.style = props.style;
+    this.addressLabel = props.addressLabel;
     this.createdAt = props.createdAt;
   }
 }

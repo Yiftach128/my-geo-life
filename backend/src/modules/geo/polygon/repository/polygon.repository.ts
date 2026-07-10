@@ -29,6 +29,7 @@ export class PolygonRepository implements IPolygonRepository {
       description: data.description,
       points: data.points,
       style: data.style,
+      addressLabel: data.addressLabel,
     });
     return PolygonMapper.toDomain(doc);
   }
@@ -41,6 +42,7 @@ export class PolygonRepository implements IPolygonRepository {
     if (data.description !== undefined) update.description = data.description;
     if (data.points !== undefined) update.points = data.points;
     if (data.style !== undefined) update.style = data.style;
+    if (data.addressLabel !== undefined) update.addressLabel = data.addressLabel;
 
     const doc = await this.model.findOneAndUpdate({ _id: id, owner: ownerId }, update, {
       new: true,

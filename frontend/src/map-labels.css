@@ -5,8 +5,10 @@
   padding: 0;
   color: #000;
   font-weight: 500;
-  font-size: 12px;
+  font-size: 14px;
   white-space: nowrap;
+  -webkit-text-stroke: 3px #fff;
+  paint-order: stroke fill;
 }
 .leaflet-tooltip.map-label::before {
   display: none; /* remove the little tooltip arrow */
@@ -24,4 +26,16 @@
   max-width: 360px;
   padding: 2px 4px;
   pointer-events: auto;
+  /* Re-enable selection (disabled app-wide in theme.ts) so the resolved address here
+     stays highlightable and copyable. */
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Compact card for the on-hover object popup (name + address + description). Keeps the
+   default Leaflet popup box/tail but tightens the padding and caps the width so long
+   addresses wrap instead of stretching the card wide. */
+.leaflet-popup.object-hover-popup .leaflet-popup-content {
+  margin: 8px 12px;
+  max-width: 260px;
 }

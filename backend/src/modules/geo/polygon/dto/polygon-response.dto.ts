@@ -9,6 +9,7 @@ export class PolygonResponseDto {
   readonly description?: string;
   readonly points: Point[];
   readonly style: GeoStyle;
+  readonly addressLabel: string | null;
   readonly createdAt: Date;
 
   private constructor(props: {
@@ -18,6 +19,7 @@ export class PolygonResponseDto {
     description?: string;
     points: Point[];
     style: GeoStyle;
+    addressLabel: string | null;
     createdAt: Date;
   }) {
     this.id = props.id;
@@ -26,6 +28,7 @@ export class PolygonResponseDto {
     this.description = props.description;
     this.points = props.points;
     this.style = props.style;
+    this.addressLabel = props.addressLabel;
     this.createdAt = props.createdAt;
   }
 
@@ -37,6 +40,7 @@ export class PolygonResponseDto {
       description: polygon.description,
       points: polygon.points,
       style: polygon.style,
+      addressLabel: polygon.addressLabel,
       createdAt: polygon.createdAt,
     });
   }

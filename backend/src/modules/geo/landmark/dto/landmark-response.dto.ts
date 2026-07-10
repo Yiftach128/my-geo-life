@@ -13,6 +13,7 @@ export class LandmarkResponseDto {
   readonly position: Point;
   readonly iconUrl?: string;
   readonly color?: string;
+  readonly addressLabel: string | null;
   readonly createdAt: Date;
 
   private constructor(props: {
@@ -23,6 +24,7 @@ export class LandmarkResponseDto {
     position: Point;
     iconUrl?: string;
     color: string;
+    addressLabel: string | null;
     createdAt: Date;
   }) {
     this.id = props.id;
@@ -32,6 +34,7 @@ export class LandmarkResponseDto {
     this.position = props.position;
     this.iconUrl = props.iconUrl;
     this.color = props.color;
+    this.addressLabel = props.addressLabel;
     this.createdAt = props.createdAt;
   }
 
@@ -44,6 +47,7 @@ export class LandmarkResponseDto {
       position: landmark.position,
       iconUrl: landmark.iconUrl,
       color: landmark.color,
+      addressLabel: landmark.addressLabel,
       createdAt: landmark.createdAt,
     });
   }

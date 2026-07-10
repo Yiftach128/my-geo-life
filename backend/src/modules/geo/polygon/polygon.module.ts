@@ -3,6 +3,7 @@ import { PolygonModel } from './persistence/polygon.model.js';
 import { PolygonRepository } from './repository/polygon.repository.js';
 import { PolygonService } from './polygon.service.js';
 import { PolygonController } from './polygon.controller.js';
+import { ReverseGeocoder } from '../geocode/geocode.service.js';
 import { asyncHandler } from '../../../shared/http/async-handler.js';
 import { validateBody } from '../../../shared/http/validate-body.js';
 import { createPolygonSchema, CreatePolygonDto } from './dto/create-polygon.dto.js';
@@ -10,11 +11,12 @@ import { updatePolygonSchema, UpdatePolygonDto } from './dto/update-polygon.dto.
 
 export interface PolygonModuleDeps {
   authenticate: RequestHandler;
+  geocoder: ReverseGeocoder;
 }
 
 export function buildPolygonModule(deps: PolygonModuleDeps): Router {
   const repository = new PolygonRepository(PolygonModel);
-  const service = new PolygonService(repository);
+  const service = new PolygonService(repository, deps.geocoder);
   const controller = new PolygonController(service);
 
   const router = Router();

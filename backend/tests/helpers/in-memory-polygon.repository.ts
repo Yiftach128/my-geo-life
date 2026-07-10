@@ -26,6 +26,7 @@ export class InMemoryPolygonRepository implements IPolygonRepository {
       description: data.description,
       points: data.points,
       style: data.style,
+      addressLabel: data.addressLabel,
       createdAt: new Date(),
     });
     this.items.push(polygon);
@@ -39,6 +40,7 @@ export class InMemoryPolygonRepository implements IPolygonRepository {
     if (data.description !== undefined) polygon.description = data.description;
     if (data.points !== undefined) polygon.points = data.points;
     if (data.style !== undefined) polygon.style = data.style;
+    if (data.addressLabel !== undefined) polygon.addressLabel = data.addressLabel;
     return polygon;
   }
 

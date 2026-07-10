@@ -16,6 +16,7 @@ export class LandmarkMapper {
       position: { lat: doc.position.lat, lng: doc.position.lng },
       iconUrl: doc.iconUrl,
       color: doc.color,
+      addressLabel: doc.addressLabel ?? null,
       createdAt: doc.createdAt,
     });
   }

@@ -31,6 +31,7 @@ export class InMemoryLandmarkRepository implements ILandmarkRepository {
       position: data.position,
       iconUrl: data.iconUrl,
       color: data.color,
+      addressLabel: data.addressLabel,
       createdAt: new Date(),
     });
     this.items.push(landmark);
@@ -49,6 +50,7 @@ export class InMemoryLandmarkRepository implements ILandmarkRepository {
     if (data.position !== undefined) landmark.position = data.position;
     if (data.iconUrl !== undefined) landmark.iconUrl = data.iconUrl;
     if (data.color !== undefined) landmark.color = data.color;
+    if (data.addressLabel !== undefined) landmark.addressLabel = data.addressLabel;
     return landmark;
   }
 

@@ -12,7 +12,6 @@ import { StyleEditor } from './StyleEditor';
 import { TooltipToggleButton } from '../common/TooltipToggleButton';
 import { LANDMARK_ICONS, LANDMARK_ICON_KEYS, resolveIconKey } from '../map/landmarkIcons';
 import { useUpdateLandmark, useDeleteLandmark } from '../../hooks/useLandmarks';
-import { useReverseGeocode } from '../../hooks/useGeocode';
 import type { LandmarkDto } from '../../types/api';
 
 interface Props {
@@ -25,11 +24,6 @@ export function LandmarkForm({ item, onClose }: Props) {
   const [description, setDescription] = useState(item.description ?? '');
   const [color, setColor] = useState(item.color);
   const [icon, setIcon] = useState(resolveIconKey(item.iconUrl));
-
-  const { data: address, isFetching: addressLoading } = useReverseGeocode(
-    item.position.lat,
-    item.position.lng,
-  );
 
   const update = useUpdateLandmark();
   const del = useDeleteLandmark();
@@ -52,7 +46,7 @@ export function LandmarkForm({ item, onClose }: Props) {
         Landmark
       </Typography>
       <Typography variant="caption" color="text.secondary">
-        {addressLoading ? 'Resolving address…' : (address ?? 'Address unavailable')}
+        {item.addressLabel ?? 'Address unavailable'}
       </Typography>
       <TextField
         label="Name"

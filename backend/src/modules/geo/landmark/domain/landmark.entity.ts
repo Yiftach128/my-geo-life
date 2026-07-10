@@ -8,6 +8,7 @@ export interface LandmarkProps {
   position: Point;
   iconUrl?: string;
   color: string;
+  addressLabel: string | null;
   createdAt: Date;
 }
 
@@ -23,6 +24,7 @@ export class Landmark {
   position: Point;
   iconUrl?: string;
   color: string;
+  addressLabel: string | null;
   readonly createdAt: Date;
 
   constructor(props: LandmarkProps) {
@@ -33,6 +35,7 @@ export class Landmark {
     this.position = props.position;
     this.iconUrl = props.iconUrl;
     this.color = props.color;
+    this.addressLabel = props.addressLabel;
     this.createdAt = props.createdAt;
   }
 }

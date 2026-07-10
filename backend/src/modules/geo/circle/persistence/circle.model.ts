@@ -10,6 +10,7 @@ export interface ICircleSchema {
   center: Point;
   radius: number;
   style: GeoStyle;
+  addressLabel?: string | null;
   createdAt: Date;
 }
 
@@ -21,6 +22,7 @@ const circleSchema = new Schema<ICircleSchema>(
     center: { type: pointSchema, required: true },
     radius: { type: Number, required: true, min: 0 },
     style: { type: geoStyleSchema, required: true },
+    addressLabel: { type: String, default: null },
     createdAt: { type: Date, default: Date.now },
   },
   { versionKey: false },

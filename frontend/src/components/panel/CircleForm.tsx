@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Box, Button, CircularProgress, Divider, TextField, Typography } from '@mui/material';
 import { StyleEditor } from './StyleEditor';
 import { useUpdateCircle, useDeleteCircle } from '../../hooks/useCircles';
-import { useReverseGeocode } from '../../hooks/useGeocode';
 import type { CircleDto, GeoStyle } from '../../types/api';
 
 interface Props {
@@ -16,11 +15,6 @@ export function CircleForm({ item, onClose }: Props) {
   const [color, setColor] = useState(item.style.strokeColor);
   const [opacity, setOpacity] = useState(item.style.opacity);
   const [fillOpacity, setFillOpacity] = useState(item.style.fillOpacity);
-
-  const { data: address, isFetching: addressLoading } = useReverseGeocode(
-    item.center.lat,
-    item.center.lng,
-  );
 
   const update = useUpdateCircle();
   const del = useDeleteCircle();
@@ -54,7 +48,7 @@ export function CircleForm({ item, onClose }: Props) {
         Radius: {Math.round(item.radius)} m
       </Typography>
       <Typography variant="caption" color="text.secondary">
-        {addressLoading ? 'Resolving address…' : (address ?? 'Address unavailable')}
+        {item.addressLabel ?? 'Address unavailable'}
       </Typography>
       <TextField
         label="Name"

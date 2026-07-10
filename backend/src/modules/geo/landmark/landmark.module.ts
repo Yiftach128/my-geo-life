@@ -3,6 +3,7 @@ import { LandmarkModel } from './persistence/landmark.model.js';
 import { LandmarkRepository } from './repository/landmark.repository.js';
 import { LandmarkService } from './landmark.service.js';
 import { LandmarkController } from './landmark.controller.js';
+import { ReverseGeocoder } from '../geocode/geocode.service.js';
 import { asyncHandler } from '../../../shared/http/async-handler.js';
 import { validateBody } from '../../../shared/http/validate-body.js';
 import { createLandmarkSchema, CreateLandmarkDto } from './dto/create-landmark.dto.js';
@@ -10,6 +11,7 @@ import { updateLandmarkSchema, UpdateLandmarkDto } from './dto/update-landmark.d
 
 export interface LandmarkModuleDeps {
   authenticate: RequestHandler;
+  geocoder: ReverseGeocoder;
 }
 
 /**
@@ -18,7 +20,7 @@ export interface LandmarkModuleDeps {
  */
 export function buildLandmarkModule(deps: LandmarkModuleDeps): Router {
   const repository = new LandmarkRepository(LandmarkModel);
-  const service = new LandmarkService(repository);
+  const service = new LandmarkService(repository, deps.geocoder);
   const controller = new LandmarkController(service);
 
   const router = Router();

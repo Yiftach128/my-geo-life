@@ -65,12 +65,16 @@ export function AppMap({
       zoomControl={false}
       doubleClickZoom={false}
       preferCanvas={true}
+      minZoom={3}
+      maxBounds={[[-90, -180], [90, 180]]}
+      maxBoundsViscosity={1.0}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         keepBuffer={4}
         updateWhenZooming={false}
+        noWrap={true}
       />
       <ZoomControl position="bottomleft" />
       <MapRefCapture mapRef={mapRef} />

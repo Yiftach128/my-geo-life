@@ -1,6 +1,7 @@
 import { Polygon, Tooltip } from 'react-leaflet';
 import type { LeafletMouseEvent } from 'leaflet';
 import { useLabelsVisible } from '../../hooks/useLabelsVisible';
+import { ObjectHoverPopup } from './ObjectHoverPopup';
 import { toPathOptions } from '../../types/api';
 import type { PolygonDto, SelectedItem } from '../../types/api';
 
@@ -23,6 +24,8 @@ export function PolygonLayer({ polygons, onSelect, onContextMenu }: Props) {
           eventHandlers={{
             click: () => onSelect({ type: 'polygon', item: polygon }),
             contextmenu: (e) => onContextMenu({ type: 'polygon', item: polygon }, e),
+            mouseover: (e) => e.target.openPopup(e.latlng),
+            mouseout: (e) => e.target.closePopup(),
           }}
         >
           {showLabels && (
@@ -30,6 +33,11 @@ export function PolygonLayer({ polygons, onSelect, onContextMenu }: Props) {
               {polygon.name}
             </Tooltip>
           )}
+          <ObjectHoverPopup
+            name={polygon.name}
+            addressLabel={polygon.addressLabel}
+            description={polygon.description}
+          />
         </Polygon>
       ))}
     </>

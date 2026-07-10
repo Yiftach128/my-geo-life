@@ -14,6 +14,7 @@ export interface ILandmarkSchema {
   position: Point;
   iconUrl?: string;
   color: string;
+  addressLabel?: string | null;
   createdAt: Date;
 }
 
@@ -25,6 +26,7 @@ const landmarkSchema = new Schema<ILandmarkSchema>(
     position: { type: pointSchema, required: true },
     iconUrl: { type: String },
     color: { type: String, required: true },
+    addressLabel: { type: String, default: null },
     createdAt: { type: Date, default: Date.now },
   },
   { versionKey: false },

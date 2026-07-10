@@ -3,6 +3,7 @@ import { CircleModel } from './persistence/circle.model.js';
 import { CircleRepository } from './repository/circle.repository.js';
 import { CircleService } from './circle.service.js';
 import { CircleController } from './circle.controller.js';
+import { ReverseGeocoder } from '../geocode/geocode.service.js';
 import { asyncHandler } from '../../../shared/http/async-handler.js';
 import { validateBody } from '../../../shared/http/validate-body.js';
 import { createCircleSchema, CreateCircleDto } from './dto/create-circle.dto.js';
@@ -10,11 +11,12 @@ import { updateCircleSchema, UpdateCircleDto } from './dto/update-circle.dto.js'
 
 export interface CircleModuleDeps {
   authenticate: RequestHandler;
+  geocoder: ReverseGeocoder;
 }
 
 export function buildCircleModule(deps: CircleModuleDeps): Router {
   const repository = new CircleRepository(CircleModel);
-  const service = new CircleService(repository);
+  const service = new CircleService(repository, deps.geocoder);
   const controller = new CircleController(service);
 
   const router = Router();

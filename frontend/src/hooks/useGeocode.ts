@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { serverStatus } from '../services/server-status';
 
 /** A search suggestion as shaped by our backend: numeric coords + a short label. */
 export interface GeocodeResult {
@@ -47,6 +47,7 @@ export function useGeocode() {
         setLoading(false);
       } catch (err) {
         if ((err as Error).name === 'AbortError') return; // superseded by a newer query
+        void serverStatus.reportSuspectedOutage(); // fetch failed -> confirm via /health
         setResults([]);
         setLoading(false);
       }
@@ -76,17 +77,4 @@ export async function reverseGeocode(
   if (!res.ok) throw new Error(`reverse geocode failed: ${res.status}`);
   const data: { label: string | null } = await res.json();
   return data.label;
-}
-
-/**
- * React Query wrapper around `reverseGeocode` for display in the edit forms. Cached
- * forever per coordinate so re-selecting the same item doesn't re-hit Nominatim.
- */
-export function useReverseGeocode(lat?: number, lon?: number) {
-  return useQuery({
-    queryKey: ['reverse-geocode', lat, lon],
-    queryFn: ({ signal }) => reverseGeocode(lat!, lon!, signal),
-    enabled: lat != null && lon != null,
-    staleTime: Infinity,
-  });
 }

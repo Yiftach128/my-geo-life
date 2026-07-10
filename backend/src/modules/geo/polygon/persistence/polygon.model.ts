@@ -9,6 +9,7 @@ export interface IPolygonSchema {
   description?: string;
   points: Point[];
   style: GeoStyle;
+  addressLabel?: string | null;
   createdAt: Date;
 }
 
@@ -26,6 +27,7 @@ const polygonSchema = new Schema<IPolygonSchema>(
       },
     },
     style: { type: geoStyleSchema, required: true },
+    addressLabel: { type: String, default: null },
     createdAt: { type: Date, default: Date.now },
   },
   { versionKey: false },

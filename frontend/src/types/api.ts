@@ -53,6 +53,7 @@ export interface LandmarkDto {
   position: Point;
   iconUrl?: string;
   color: string;
+  addressLabel: string | null;
   createdAt: string;
 }
 
@@ -64,6 +65,7 @@ export interface CircleDto {
   center: Point;
   radius: number;
   style: GeoStyle;
+  addressLabel: string | null;
   createdAt: string;
 }
 
@@ -74,6 +76,7 @@ export interface PolygonDto {
   description?: string;
   points: Point[];
   style: GeoStyle;
+  addressLabel: string | null;
   createdAt: string;
 }
 

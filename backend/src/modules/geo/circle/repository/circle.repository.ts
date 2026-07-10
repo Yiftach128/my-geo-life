@@ -30,6 +30,7 @@ export class CircleRepository implements ICircleRepository {
       center: data.center,
       radius: data.radius,
       style: data.style,
+      addressLabel: data.addressLabel,
     });
     return CircleMapper.toDomain(doc);
   }
@@ -43,6 +44,7 @@ export class CircleRepository implements ICircleRepository {
     if (data.center !== undefined) update.center = data.center;
     if (data.radius !== undefined) update.radius = data.radius;
     if (data.style !== undefined) update.style = data.style;
+    if (data.addressLabel !== undefined) update.addressLabel = data.addressLabel;
 
     const doc = await this.model.findOneAndUpdate({ _id: id, owner: ownerId }, update, {
       new: true,

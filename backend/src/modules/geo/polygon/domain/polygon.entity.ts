@@ -8,6 +8,7 @@ export interface PolygonProps {
   description?: string;
   points: Point[];
   style: GeoStyle;
+  addressLabel: string | null;
   createdAt: Date;
 }
 
@@ -23,6 +24,7 @@ export class Polygon {
   description?: string;
   points: Point[];
   style: GeoStyle;
+  addressLabel: string | null;
   readonly createdAt: Date;
 
   constructor(props: PolygonProps) {
@@ -32,6 +34,7 @@ export class Polygon {
     this.description = props.description;
     this.points = props.points;
     this.style = props.style;
+    this.addressLabel = props.addressLabel;
     this.createdAt = props.createdAt;
   }
 }

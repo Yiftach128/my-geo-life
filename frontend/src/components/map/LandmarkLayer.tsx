@@ -2,6 +2,7 @@ import { Marker, Tooltip } from 'react-leaflet';
 import type { LeafletMouseEvent } from 'leaflet';
 import { useLabelsVisible } from '../../hooks/useLabelsVisible';
 import { landmarkDivIcon } from './landmarkIcons';
+import { ObjectHoverPopup } from './ObjectHoverPopup';
 import type { LandmarkDto, SelectedItem } from '../../types/api';
 
 interface Props {
@@ -22,6 +23,8 @@ export function LandmarkLayer({ landmarks, onSelect, onContextMenu }: Props) {
           eventHandlers={{
             click: () => onSelect({ type: 'landmark', item: landmark }),
             contextmenu: (e) => onContextMenu({ type: 'landmark', item: landmark }, e),
+            mouseover: (e) => e.target.openPopup(),
+            mouseout: (e) => e.target.closePopup(),
           }}
         >
           {showLabels && (
@@ -29,6 +32,11 @@ export function LandmarkLayer({ landmarks, onSelect, onContextMenu }: Props) {
               {landmark.name}
             </Tooltip>
           )}
+          <ObjectHoverPopup
+            name={landmark.name}
+            addressLabel={landmark.addressLabel}
+            description={landmark.description}
+          />
         </Marker>
       ))}
     </>

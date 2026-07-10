@@ -81,13 +81,14 @@ export default function MapPage() {
     setProbe({ lat, lng, loading: false, text: address });
   };
 
-  // "+" in the probe popup: create a landmark at the pin, reusing the resolved address as its
-  // description, then open its edit panel and clear the pin/popup.
+  // "+" in the probe popup: create a landmark at the pin, then open its edit panel and clear the
+  // pin/popup. The backend reverse-geocodes the position into the landmark's addressLabel — served
+  // from the shared server-side cache the probe above just warmed for these coords, so it's a cache
+  // hit, not a second Nominatim request (and still correct on a cold cache: it just does the lookup).
   const handleAddLandmarkAtProbe = async () => {
     if (!probe) return;
     const item = await createLandmark.mutateAsync({
       name: 'New Landmark',
-      description: probe.text ?? undefined,
       position: { lat: probe.lat, lng: probe.lng },
       color: DEFAULT_COLOR,
     });
@@ -188,6 +189,11 @@ export default function MapPage() {
               polygons={polygons}
               visibility={layerVisibility}
               mapRef={mapRef}
+              onEditItem={setSelectedItem}
+              onDeleted={(selected) => {
+                // If the deleted object is open in the edit panel, close it so no stale form remains.
+                if (selectedItem?.item.id === selected.item.id) setSelectedItem(null);
+              }}
             />
           </Box>
         </Box>

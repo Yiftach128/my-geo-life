@@ -9,6 +9,7 @@ export interface CreatePolygonData {
   description?: string;
   points: Point[];
   style: GeoStyle;
+  addressLabel: string | null;
 }
 
 /** Partial update payload. Undefined fields are ignored. */
@@ -17,6 +18,7 @@ export interface UpdatePolygonData {
   description?: string;
   points?: Point[];
   style?: GeoStyle;
+  addressLabel?: string | null;
 }
 
 /**

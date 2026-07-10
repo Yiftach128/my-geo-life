@@ -13,6 +13,13 @@ export const theme = createTheme({
   components: {
     MuiCssBaseline: {
       styleOverrides: {
+        // Disable text selection app-wide so dragging on the map or UI never highlights
+        // label/control text. Editable fields are re-exempted so typing and selecting in
+        // form inputs (and the SearchBar) still work. The click-to-address popup
+        // re-enables selection locally so addresses stay copyable (see map-labels.css
+        // .probe-popup).
+        body: { userSelect: 'none', WebkitUserSelect: 'none' },
+        'input, textarea': { userSelect: 'text', WebkitUserSelect: 'text' },
         // Same font for Leaflet's own text (attribution/controls) and the map-label
         // tooltips that inherit from the container. Doubled class raises specificity
         // above leaflet.css regardless of stylesheet load order.

@@ -10,6 +10,7 @@ export interface CreateCircleData {
   center: Point;
   radius: number;
   style: GeoStyle;
+  addressLabel: string | null;
 }
 
 /** Partial update payload. Undefined fields are ignored. */
@@ -19,6 +20,7 @@ export interface UpdateCircleData {
   center?: Point;
   radius?: number;
   style?: GeoStyle;
+  addressLabel?: string | null;
 }
 
 /**

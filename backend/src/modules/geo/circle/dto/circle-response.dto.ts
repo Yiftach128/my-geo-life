@@ -10,6 +10,7 @@ export class CircleResponseDto {
   readonly center: Point;
   readonly radius: number;
   readonly style: GeoStyle;
+  readonly addressLabel: string | null;
   readonly createdAt: Date;
 
   private constructor(props: {
@@ -20,6 +21,7 @@ export class CircleResponseDto {
     center: Point;
     radius: number;
     style: GeoStyle;
+    addressLabel: string | null;
     createdAt: Date;
   }) {
     this.id = props.id;
@@ -29,6 +31,7 @@ export class CircleResponseDto {
     this.center = props.center;
     this.radius = props.radius;
     this.style = props.style;
+    this.addressLabel = props.addressLabel;
     this.createdAt = props.createdAt;
   }
 
@@ -41,6 +44,7 @@ export class CircleResponseDto {
       center: circle.center,
       radius: circle.radius,
       style: circle.style,
+      addressLabel: circle.addressLabel,
       createdAt: circle.createdAt,
     });
   }

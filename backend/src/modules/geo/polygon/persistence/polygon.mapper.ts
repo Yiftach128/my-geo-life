@@ -18,6 +18,7 @@ export class PolygonMapper {
         fillOpacity: doc.style.fillOpacity,
         dashArray: doc.style.dashArray,
       },
+      addressLabel: doc.addressLabel ?? null,
       createdAt: doc.createdAt,
     });
   }

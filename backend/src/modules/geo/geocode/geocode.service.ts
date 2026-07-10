@@ -9,6 +9,15 @@ export interface GeocodingServiceConfig {
   language: string;
 }
 
+/**
+ * The narrow reverse-geocoding capability the geo services depend on, so they
+ * rely on an abstraction (and can be stubbed in tests) rather than the whole
+ * `GeocodingService` — which satisfies this interface.
+ */
+export interface ReverseGeocoder {
+  reverse(lat: number, lon: number, lang?: string): Promise<GeocodeReverseResult>;
+}
+
 /** Nominatim allows at most 1 req/sec per IP; 1100ms leaves a safety margin. */
 const MIN_INTERVAL_MS = 1100;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h — a coordinate's address is stable
