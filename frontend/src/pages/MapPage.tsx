@@ -20,7 +20,7 @@ import { usePolygons } from '../hooks/usePolygons';
 import { useDrawingMode } from '../hooks/useDrawingMode';
 import { reverseGeocode } from '../hooks/useGeocode';
 import { usePersistentState } from '../hooks/usePersistentState';
-import { DEFAULT_COLOR, type SelectedItem } from '../types/api';
+import { DEFAULT_COLOR, POINT_FLY_ZOOM, type SelectedItem } from '../types/api';
 
 interface LayerVisibility {
   landmarks: boolean;
@@ -32,7 +32,7 @@ interface LayerVisibility {
 const ALL_LAYERS_VISIBLE: LayerVisibility = { landmarks: true, circles: true, polygons: true };
 
 export default function MapPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const mapRef = useRef<L.Map | null>(null) as MutableRefObject<L.Map | null>;
 
   const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
@@ -48,16 +48,20 @@ export default function MapPage() {
     ALL_LAYERS_VISIBLE,
   );
 
-  // On an actual sign-in (isAuthenticated false → true), reset every layer to ON. The ref is
-  // seeded with the initial auth value, so an already-authenticated first render/refresh does
-  // not fire — only a real sign-in or registration during the session does.
+  // On an actual sign-in (isAuthenticated false → true), reset every layer to ON and, if the user
+  // has a saved address, fly the map to it. The ref is seeded with the initial auth value, so an
+  // already-authenticated first render/refresh does not fire — only a real sign-in or registration
+  // during the session does (so a plain refresh keeps the restored last-viewed position, and a
+  // later profile address change moves the Home marker without re-flying).
   const wasAuthenticated = useRef(isAuthenticated);
   useEffect(() => {
     if (isAuthenticated && !wasAuthenticated.current) {
       setLayerVisibility(ALL_LAYERS_VISIBLE);
+      const addr = user?.address;
+      if (addr) mapRef.current?.flyTo([addr.lat, addr.lon], POINT_FLY_ZOOM, { duration: 1.25 });
     }
     wasAuthenticated.current = isAuthenticated;
-  }, [isAuthenticated, setLayerVisibility]);
+  }, [isAuthenticated, user, setLayerVisibility]);
 
   const drawingMode = useDrawingMode({
     onItemCreated: setSelectedItem,

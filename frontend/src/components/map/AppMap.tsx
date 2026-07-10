@@ -7,6 +7,7 @@ import { MapClickHandler } from './MapClickHandler';
 import { ClickAddressProbe } from './ClickAddressProbe';
 import { ProbePopup } from './ProbePopup';
 import { LandmarkLayer } from './LandmarkLayer';
+import { HomeMarker } from './HomeMarker';
 import { CircleLayer } from './CircleLayer';
 import { PolygonLayer } from './PolygonLayer';
 import { DrawingPreview } from './DrawingPreview';
@@ -101,11 +102,14 @@ export function AppMap({
       <DrawingPreview drawingState={drawingMode.state} />
 
       {isAuthenticated && layerVisibility.landmarks && (
-        <LandmarkLayer
-          landmarks={landmarks}
-          onSelect={onSelectItem}
-          onContextMenu={onContextMenuItem}
-        />
+        <>
+          <LandmarkLayer
+            landmarks={landmarks}
+            onSelect={onSelectItem}
+            onContextMenu={onContextMenuItem}
+          />
+          <HomeMarker />
+        </>
       )}
       {isAuthenticated && layerVisibility.circles && (
         <CircleLayer circles={circles} onSelect={onSelectItem} onContextMenu={onContextMenuItem} />

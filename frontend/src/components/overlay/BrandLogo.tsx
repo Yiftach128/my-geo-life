@@ -1,9 +1,9 @@
 import { Box, Paper, Typography } from '@mui/material';
 
 /**
- * GeoPlot wordmark shown in the bottom-left corner of the map. Purely decorative —
+ * My Geo Life wordmark shown in the bottom-left corner of the map. Purely decorative —
  * the parent overlay leaves pointerEvents off so the map stays draggable underneath.
- * The pin matches the favicon (public/geoplot-icon.svg) so the tab and app read as one brand.
+ * The pin matches the favicon (public/my-geo-life-icon.svg) so the tab and app read as one brand.
  */
 export function BrandLogo() {
   return (
@@ -26,7 +26,7 @@ export function BrandLogo() {
         <circle cx="16" cy="12" r="3.75" fill="#fff" />
       </Box>
       <Typography variant="subtitle1" sx={{ fontWeight: 700, letterSpacing: 0.2, lineHeight: 1 }}>
-        GeoPlot
+        My Geo Life
       </Typography>
     </Paper>
   );

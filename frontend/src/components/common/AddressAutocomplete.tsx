@@ -10,8 +10,9 @@ interface Props {
 }
 
 /**
- * Address field that forces a real, geocoded pick — the same Nominatim search the
- * map SearchBar uses, but without `freeSolo`, so only a selected suggestion counts.
+ * Address field over the same Nominatim search the map SearchBar uses. Uses `freeSolo`
+ * (like SearchBar) so no dropdown chevron shows, but still only emits an `Address` when a
+ * real suggestion is picked — free text is ignored on select.
  * Emits `{ label, lat, lon }` on select, or `null` when cleared.
  */
 export function AddressAutocomplete({ value, onChange, label = 'Address (optional)' }: Props) {
@@ -21,6 +22,7 @@ export function AddressAutocomplete({ value, onChange, label = 'Address (optiona
 
   return (
     <Autocomplete
+      freeSolo
       fullWidth
       open={open}
       onOpen={() => setOpen(true)}
@@ -28,8 +30,7 @@ export function AddressAutocomplete({ value, onChange, label = 'Address (optiona
       filterOptions={(x) => x}
       options={results}
       inputValue={inputValue}
-      getOptionLabel={(opt) => opt.label}
-      isOptionEqualToValue={(opt, val) => opt.place_id === val.place_id}
+      getOptionLabel={(opt) => (typeof opt === 'string' ? opt : opt.label)}
       onInputChange={(_, val, reason) => {
         if (reason === 'input') {
           setInputValue(val);
@@ -40,6 +41,7 @@ export function AddressAutocomplete({ value, onChange, label = 'Address (optiona
         }
       }}
       onChange={(_, selected) => {
+        if (typeof selected === 'string') return; // Enter on unmatched free text → don't save
         if (selected) {
           onChange({
             label: selected.label,

@@ -11,7 +11,7 @@ const envSchema = z.object({
   GEOCODER_BASE_URL: z.string().url().default('https://nominatim.openstreetmap.org'),
   // Nominatim rejects stock library/browser User-Agents. App name only by default —
   // no personal info in committed code; override in a local .env to add a contact.
-  GEOCODER_USER_AGENT: z.string().min(1).default('Geo_app/1.0'),
+  GEOCODER_USER_AGENT: z.string().min(1).default('MyGeoLife/1.0'),
   GEOCODER_LANGUAGE: z.string().default('he,en'),
 });
 
