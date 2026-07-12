@@ -32,6 +32,7 @@ export class InMemoryUserRepository implements IUserRepository {
       email: data.email,
       passwordHash: data.passwordHash,
       tokenVersion: 0,
+      role: 'user',
       createdAt: new Date(),
       address: data.address,
     });

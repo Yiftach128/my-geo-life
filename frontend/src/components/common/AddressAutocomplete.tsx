@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Autocomplete, CircularProgress, TextField } from '@mui/material';
 import { useGeocode } from '../../hooks/useGeocode';
 import type { Address } from '../../types/api';
@@ -19,6 +19,14 @@ export function AddressAutocomplete({ value, onChange, label = 'Address (optiona
   const { results, loading, search } = useGeocode();
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState(value?.label ?? '');
+
+  // Keep the visible text in sync when the address is changed from outside this field
+  // (e.g. ProfileModal re-seeds/refetches on open — the field stays mounted, so the useState
+  // initializer above runs only once). Keyed on the label primitive, not the object, so an
+  // in-progress typed value (which doesn't change `value`) is never clobbered.
+  useEffect(() => {
+    setInputValue(value?.label ?? '');
+  }, [value?.label]);
 
   return (
     <Autocomplete

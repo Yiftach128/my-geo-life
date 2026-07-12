@@ -5,12 +5,15 @@ export interface Address {
   lon: number;
 }
 
+export type UserRole = 'user' | 'admin';
+
 export interface UserProps {
   id: string;
   name: string;
   email: string;
   passwordHash: string;
   tokenVersion: number;
+  role: UserRole;
   createdAt: Date;
   address?: Address;
 }
@@ -26,6 +29,7 @@ export class User {
   email: string;
   passwordHash: string;
   tokenVersion: number;
+  role: UserRole;
   readonly createdAt: Date;
   address?: Address;
 
@@ -35,6 +39,7 @@ export class User {
     this.email = props.email;
     this.passwordHash = props.passwordHash;
     this.tokenVersion = props.tokenVersion;
+    this.role = props.role;
     this.createdAt = props.createdAt;
     this.address = props.address;
   }

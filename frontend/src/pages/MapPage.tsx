@@ -10,6 +10,7 @@ import { MapObjectsList } from '../components/overlay/MapObjectsList';
 import { ObjectContextMenu, type ObjectContextMenuState } from '../components/overlay/ObjectContextMenu';
 import { DrawingModeBanner } from '../components/overlay/DrawingModeBanner';
 import { BrandLogo } from '../components/overlay/BrandLogo';
+import { WelcomeCard } from '../components/overlay/WelcomeCard';
 import { SidePanel } from '../components/panel/SidePanel';
 import { AuthModal } from '../components/auth/AuthModal';
 import { ProfileModal } from '../components/profile/ProfileModal';
@@ -43,6 +44,17 @@ export default function MapPage() {
   const probeIdRef = useRef(0);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  // Welcome card: auto-shown to logged-out visitors on every load/refresh, and re-openable by
+  // anyone (including signed-in users) via the BrandLogo. `isAuthenticated` is derived
+  // synchronously from persisted auth, so the initial value is reliably false for an anonymous
+  // visitor and true for a signed-in one. Dismissing only closes it for this page view; it
+  // reappears on the next refresh for logged-out users (no persistence).
+  const [welcomeOpen, setWelcomeOpen] = useState(() => !isAuthenticated);
+  const dismissWelcome = () => setWelcomeOpen(false);
+  const startFromWelcome = () => {
+    dismissWelcome();
+    setAuthModalOpen(true);
+  };
   const [layerVisibility, setLayerVisibility] = usePersistentState<LayerVisibility>(
     'ui.layerVisibility',
     ALL_LAYERS_VISIBLE,
@@ -56,6 +68,7 @@ export default function MapPage() {
   const wasAuthenticated = useRef(isAuthenticated);
   useEffect(() => {
     if (isAuthenticated && !wasAuthenticated.current) {
+      setWelcomeOpen(false); // close the welcome card if they sign in while it's open
       setLayerVisibility(ALL_LAYERS_VISIBLE);
       const addr = user?.address;
       if (addr) mapRef.current?.flyTo([addr.lat, addr.lon], POINT_FLY_ZOOM, { duration: 1.25 });
@@ -159,7 +172,10 @@ export default function MapPage() {
           }}
         >
           <AuthButton
-            onSignInClick={() => setAuthModalOpen(true)}
+            onSignInClick={() => {
+              setAuthModalOpen(true);
+              dismissWelcome(); // close the welcome card behind the auth modal
+            }}
             onManageProfileClick={() => setProfileModalOpen(true)}
           />
           <SearchBar mapRef={mapRef} onPickResult={handlePickSearchResult} />
@@ -210,9 +226,9 @@ export default function MapPage() {
         />
 
 
-        {/* Bottom-right: brand logo (decorative — pointerEvents left off so the map stays draggable) */}
-        <Box sx={{ position: 'absolute', bottom: 28, right: 16 }}>
-          <BrandLogo />
+        {/* Bottom-right: brand logo — clickable to (re)open the welcome card */}
+        <Box sx={{ position: 'absolute', bottom: 28, right: 16, pointerEvents: 'auto' }}>
+          <BrandLogo onClick={() => setWelcomeOpen(true)} />
         </Box>
       </Box>
 
@@ -235,6 +251,14 @@ export default function MapPage() {
 
       {/* Manage-profile modal */}
       <ProfileModal open={profileModalOpen} onClose={() => setProfileModalOpen(false)} />
+
+      {/* Welcome card — auto-shown to logged-out visitors, re-openable by anyone via the logo */}
+      <WelcomeCard
+        open={welcomeOpen}
+        onClose={dismissWelcome}
+        onGetStarted={startFromWelcome}
+        isAuthenticated={isAuthenticated}
+      />
     </Box>
   );
 }

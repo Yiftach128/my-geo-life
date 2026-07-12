@@ -12,6 +12,8 @@ interface ChangePasswordPayload {
 }
 
 export const usersApi = {
+  getById: (id: string) => apiFetch<UserDto>(`/api/users/${id}`),
+
   update: (id: string, data: UpdateProfilePayload) =>
     apiFetch<UserDto>(`/api/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 

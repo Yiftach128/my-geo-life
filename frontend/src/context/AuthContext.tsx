@@ -1,6 +1,8 @@
-import { createContext, useCallback, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../services/auth.api';
+import { usersApi } from '../services/users.api';
+import { ApiError } from '../services/api-client';
 import type { UserDto } from '../types/api';
 
 interface AuthContextValue {
@@ -51,6 +53,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token');
     queryClient.clear();
   }, [queryClient]);
+
+  // On app load, refresh the profile from the server so `user` (and everything it drives —
+  // the modal, the Home marker) isn't stale localStorage data. Runs once: `initial` is a
+  // stable memo and updateUser/logout are stable callbacks. A 401 (expired token) logs out;
+  // other failures keep the cached copy. Same id, so MapPage's sign-in fly-to won't re-fire.
+  useEffect(() => {
+    if (!initial.token || !initial.user) return;
+    let cancelled = false;
+    usersApi
+      .getById(initial.user.id)
+      .then((fresh) => {
+        if (!cancelled) updateUser(fresh);
+      })
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 401) logout();
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [initial, updateUser, logout]);
 
   const value = useMemo(
     () => ({

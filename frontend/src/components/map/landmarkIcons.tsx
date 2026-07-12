@@ -11,6 +11,12 @@ import StoreIcon from '@mui/icons-material/Store';
 import HotelIcon from '@mui/icons-material/Hotel';
 import MuseumIcon from '@mui/icons-material/Museum';
 import WarningIcon from '@mui/icons-material/Warning';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import PetsIcon from '@mui/icons-material/Pets';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import NotInterestedIcon from '@mui/icons-material/NotInterested';
+import AttractionsIcon from '@mui/icons-material/Attractions';
 
 /**
  * Single source of truth for the preset landmark icons (frontend side). Keys
@@ -28,6 +34,12 @@ export const LANDMARK_ICONS = {
   hotel: { label: 'Hotel', Icon: HotelIcon },
   museum: { label: 'Museum', Icon: MuseumIcon },
   warning: { label: 'Warning', Icon: WarningIcon },
+  gym: { label: 'Gym', Icon: FitnessCenterIcon },
+  favorite: { label: 'Favorite', Icon: FavoriteIcon },
+  pets: { label: 'Pets', Icon: PetsIcon },
+  viewpoint: { label: 'Viewpoint', Icon: VisibilityIcon },
+  blocked: { label: 'No access', Icon: NotInterestedIcon },
+  attraction: { label: 'Attraction', Icon: AttractionsIcon },
 } satisfies Record<string, { label: string; Icon: SvgIconComponent }>;
 
 export type IconKey = keyof typeof LANDMARK_ICONS;

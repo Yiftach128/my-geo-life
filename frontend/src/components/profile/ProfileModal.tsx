@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -40,6 +40,34 @@ export function ProfileModal({ open, onClose }: Props) {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  // On open ("entry"), refetch the freshest profile from the server. The modal stays mounted
+  // in MapPage, so the useState initializers above don't re-run on reopen — re-seed the form
+  // from the current cached user right away, then overwrite with server data when it arrives.
+  useEffect(() => {
+    if (!open || !user) return;
+    setName(user.name);
+    setAddress(user.address ?? null);
+    setProfileError('');
+    setProfileSuccess('');
+    let cancelled = false;
+    usersApi
+      .getById(user.id)
+      .then((fresh) => {
+        if (cancelled) return;
+        updateUser(fresh);
+        setName(fresh.name);
+        setAddress(fresh.address ?? null);
+      })
+      .catch(() => {
+        /* keep showing the cached data on failure */
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Run on open / user id only; whole-`user` dep would loop via updateUser.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, user?.id]);
 
   if (!user) return null;
 

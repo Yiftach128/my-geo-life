@@ -14,6 +14,7 @@ export class UserMapper {
       email: doc.email,
       passwordHash: doc.password,
       tokenVersion: doc.tokenVersion,
+      role: doc.role,
       createdAt: doc.createdAt,
       address: doc.address
         ? { label: doc.address.label, lat: doc.address.lat, lon: doc.address.lon }

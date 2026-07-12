@@ -9,6 +9,8 @@ import { ITokenService } from '../../shared/security/token.service.js';
 import { asyncHandler } from '../../shared/http/async-handler.js';
 import { validateBody } from '../../shared/http/validate-body.js';
 import { createAuthenticate } from '../../shared/http/authenticate.js';
+import { authorizeSelf } from '../../shared/http/authorize-self.js';
+import { requireAdmin } from '../../shared/http/require-admin.js';
 import { createUserSchema, CreateUserDto } from './dto/create-user.dto.js';
 import { updateUserSchema, UpdateUserDto } from './dto/update-user.dto.js';
 import { changePasswordSchema, ChangePasswordDto } from './dto/change-password.dto.js';
@@ -37,18 +39,31 @@ export function buildUserModule(deps: UserModuleDeps): UserModule {
   const router = Router();
   router.use(authenticate); // protect all routes below
 
-  router.get('/', asyncHandler(controller.getAll));
-  router.get('/:id', asyncHandler(controller.getById));
-
+  // Admin-only: listing every user / creating arbitrary users (signup lives at /auth/register).
+  router.get('/', requireAdmin, asyncHandler(controller.getAll));
   //validateBody(CreateUserDto: the constructor of this class) - does validation + attacthes DTO to req
-  router.post('/', validateBody(createUserSchema, CreateUserDto), asyncHandler(controller.create));
-  router.put('/:id', validateBody(updateUserSchema, UpdateUserDto), asyncHandler(controller.update));
+  router.post(
+    '/',
+    requireAdmin,
+    validateBody(createUserSchema, CreateUserDto),
+    asyncHandler(controller.create),
+  );
+
+  // Self-only: a user may only read/update/delete their own account (authorizeSelf → 403 otherwise).
+  router.get('/:id', authorizeSelf, asyncHandler(controller.getById));
+  router.put(
+    '/:id',
+    authorizeSelf,
+    validateBody(updateUserSchema, UpdateUserDto),
+    asyncHandler(controller.update),
+  );
   router.put(
     '/passwordchange/:id',
+    authorizeSelf,
     validateBody(changePasswordSchema, ChangePasswordDto),
     asyncHandler(controller.changePassword),
   );
-  router.delete('/:id', asyncHandler(controller.delete));
+  router.delete('/:id', authorizeSelf, asyncHandler(controller.delete));
 
   return { router, userRepository };
 }

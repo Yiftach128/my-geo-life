@@ -11,6 +11,7 @@ export interface IUserSchema {
   password: string;
   address?: { label: string; lat: number; lon: number };
   tokenVersion: number;
+  role: 'user' | 'admin';
   createdAt: Date;
 }
 
@@ -31,6 +32,7 @@ const userSchema = new Schema<IUserSchema>(
     password: { type: String, required: true },
     address: { type: addressSubSchema },
     tokenVersion: { type: Number, default: 0 },
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },
     createdAt: { type: Date, default: Date.now },
   },
   { versionKey: false },

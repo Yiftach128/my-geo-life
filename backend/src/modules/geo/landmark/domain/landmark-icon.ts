@@ -14,6 +14,12 @@ export const LANDMARK_ICON_KEYS = [
   'hotel',
   'museum',
   'warning',
+  'gym',
+  'favorite',
+  'pets',
+  'viewpoint',
+  'blocked',
+  'attraction',
 ] as const;
 
 export type LandmarkIconKey = (typeof LANDMARK_ICON_KEYS)[number];
