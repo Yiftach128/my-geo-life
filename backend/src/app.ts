@@ -3,6 +3,7 @@ import { config } from './shared/config/env.js';
 import { PasswordHasher } from './shared/security/password-hasher.js';
 import { TokenService } from './shared/security/token.service.js';
 import { errorHandler } from './shared/http/error-handler.js';
+import { staticFrontend } from './shared/http/static-frontend.js';
 import { buildUserModule } from './modules/user/user.module.js';
 import { buildAuthModule } from './modules/auth/auth.module.js';
 import { buildGeoModule } from './modules/geo/geo.module.js';
@@ -41,6 +42,11 @@ export function buildApp(): Application {
   app.get('/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok', uptime: process.uptime() });
   });
+
+  // Production image only: serve the built React app from the same origin.
+  if (config.staticDir) {
+    app.use(staticFrontend(config.staticDir));
+  }
 
   app.use(errorHandler);
 

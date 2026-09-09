@@ -1,0 +1,25 @@
+# Build context is the repo root; keep everything that is not source out of it.
+.git
+.gitignore
+.gitattributes
+**/.gitignore
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+**/tsconfig.tsbuildinfo
+**/*.log
+# local-only files
+pass.txt
+plan.txt
+domain.txt
+# not needed inside the image
+public/
+docs/
+cloudformation/
+.github/
+*.md
+docker-compose.yml
+Dockerfile
+backend/tests/
+backend/vitest.config.ts

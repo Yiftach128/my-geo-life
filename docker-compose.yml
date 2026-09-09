@@ -1,6 +1,6 @@
-
+# Local run of the production image next to a throwaway MongoDB.
+# App (API + frontend) on http://localhost:3000. Data persists in the mongo-data volume.
 services:
-
   mongodb:
     image: mongo:7
     ports:
@@ -11,21 +11,19 @@ services:
     volumes:
       - mongo-data:/data/db
 
-  backend:
-    build: ./backend
+  app:
+    build: .
     ports:
       - "3000:3000"
     env_file:
-      - ./backend/.env
+      - ./backend/.env # JWT_SECRET and optional geocoder settings
+    environment:
+      # Inside the compose network the database is reached by service name;
+      # this overrides whatever MONGO_URI the local .env has.
+      MONGO_URI: mongodb://admin:secret@mongodb:27017/mydb?authSource=admin
+      PORT: "3000"
     depends_on:
       - mongodb
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
 
 volumes:
   mongo-data:

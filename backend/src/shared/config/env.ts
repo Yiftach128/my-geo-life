@@ -13,6 +13,9 @@ const envSchema = z.object({
   // no personal info in committed code; override in a local .env to add a contact.
   GEOCODER_USER_AGENT: z.string().min(1).default('MyGeoLife/1.0'),
   GEOCODER_LANGUAGE: z.string().default('he,en'),
+  // Absolute path of the built frontend to serve from this process. Set only in
+  // the production image; unset in dev, where Vite serves the frontend.
+  STATIC_DIR: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -35,6 +38,7 @@ export const config = {
   geocoderBaseUrl: parsed.data.GEOCODER_BASE_URL,
   geocoderUserAgent: parsed.data.GEOCODER_USER_AGENT,
   geocoderLanguage: parsed.data.GEOCODER_LANGUAGE,
+  staticDir: parsed.data.STATIC_DIR,
 } as const;
 
 export type Config = typeof config;

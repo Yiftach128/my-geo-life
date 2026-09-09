@@ -84,6 +84,8 @@ Geo_app/
       services/    API clients
       types/       shared types and the drawing state machine
   public/      demo video, gif, screenshots
+  Dockerfile   one production image: API + built frontend
+  docker-compose.yml  runs that image with a local MongoDB
 ```
 
 ## Running it locally
@@ -120,6 +122,25 @@ npm run dev             # runs on http://localhost:5173
 Then open http://localhost:5173.
 
 A few other commands: on the backend, `npm run build` and `npm start` compile and run the API, and `npm test` runs the tests. On the frontend, `npm run build` type-checks and bundles for production.
+
+## Running with Docker
+
+The whole app ships as one image: Express serves the API and the built React app on port 3000. The compose file also starts a throwaway MongoDB, so this is the quickest way to run everything:
+
+```bash
+docker compose up --build    # then open http://localhost:3000
+```
+
+It reads `backend/.env` for `JWT_SECRET` and the optional geocoder settings, and points `MONGO_URI` at the bundled MongoDB container.
+
+To build and run the image on its own, against any MongoDB:
+
+```bash
+docker build -t my-geo-life .
+docker run --rm -p 3000:3000 -e MONGO_URI=... -e JWT_SECRET=... my-geo-life
+```
+
+The `Dockerfile` is multi-stage: the frontend and backend are built in separate stages, and only the compiled API, its production dependencies and the static frontend land in the final `node:24-alpine` image, which runs as the unprivileged `node` user.
 
 ## What I'd add next
 

@@ -6,3 +6,6 @@ pass.txt
 # common secret files
 .env
 *.env
+
+# local planning docs and runbook (contain account details)
+docs/
