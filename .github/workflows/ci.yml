@@ -1,0 +1,63 @@
+
+name: CI
+
+on:
+  push:            # every push to every branch
+  pull_request:    # plus the merge result of every pull request
+  # For a pull request opened from a branch in this same repo both events fire,
+  # so such a push shows two runs. Harmless on a solo public repo (minutes are free).
+
+# When you push again to the same branch, cancel the run still going for the
+# previous commit instead of finishing work nobody will look at.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# The token GitHub hands the job can only read the repository.
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: backend (test + compile)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24                 # same major as node:24-alpine in the Dockerfile
+          cache: npm                       # keeps ~/.npm between runs, keyed on the lock file
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci                        # exact versions from package-lock.json, fails if the lock is stale
+      - run: npm test                      # vitest, pure unit tests, no database needed
+      - run: npm run build                 # tsc: type errors fail the run
+
+  frontend:
+    name: frontend (type-check + bundle)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build                 # runs tsc --noEmit first, then vite build
+
+  docker:
+    name: docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # The runner ships with Docker and BuildKit. This repeats both builds above
+      # inside the multi-stage Dockerfile and assembles the runtime stage, which
+      # is what catches a broken Dockerfile or .dockerignore. The image is
+      # thrown away with the runner; nothing is tagged for a registry.
+      - run: docker build --tag my-geo-life:ci .
