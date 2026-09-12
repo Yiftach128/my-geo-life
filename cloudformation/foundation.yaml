@@ -162,9 +162,13 @@ Resources:
                   - elasticloadbalancing:*
                 Resource: "*"
               # ECS and the load balancer look up subnets and security groups.
+              # Creating a load balancer validates its security groups with
+              # GetSecurityGroupsForVpc, which is not part of the Describe family.
               - Sid: ReadNetwork
                 Effect: Allow
-                Action: ec2:Describe*
+                Action:
+                  - ec2:Describe*
+                  - ec2:GetSecurityGroupsForVpc
                 Resource: "*"
               # Registering a task definition hands the two roles above to ECS.
               # Handing a role to a service is itself a permission (PassRole),

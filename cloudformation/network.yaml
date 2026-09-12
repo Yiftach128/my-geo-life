@@ -1,0 +1,201 @@
+# my-geo-life network: the VPC the app runs in. Permanent and free.
+#
+# One VPC, two public subnets in two availability zones, an internet gateway
+# with a route to it, and the two security groups the app stack attaches to
+# its load balancer and its tasks. None of these bill by the hour, so the
+# stack is deployed once and stays.
+#
+# Why an own VPC instead of the default one: every account gets a default VPC
+# with its own subnet ids. A template that creates its network works in any
+# account and any region, and the app stack imports subnet and security group
+# ids by export name instead of looking them up.
+#
+# Two subnets because an application load balancer requires subnets in at
+# least two availability zones. Both are public (they route to the internet
+# gateway) so the tasks can pull the image from ECR and reach the database
+# without a NAT gateway, which would bill by the hour.
+#
+# Intrinsic functions new in this template:
+#   !GetAZs ""              the availability zones of the current region, as a list
+#   !Select [n, list]       item n of a list, counting from 0
+#   !Cidr [block, n, bits]  splits an address block into n subnets of 2^bits addresses
+#   !Join [",", list]       one string out of a list; exports must be strings
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: my-geo-life network. VPC, two public subnets, internet gateway and security groups. Permanent and free.
+
+Parameters:
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+    AllowedPattern: '^(\d{1,3}\.){3}\d{1,3}/\d{1,2}$'
+    Description: Address range of the VPC. The two subnets are carved out of it.
+
+  ContainerPort:
+    Type: Number
+    Default: 3000
+    Description: Port the application container listens on. Opened to the load balancer only.
+
+Resources:
+  # ---------------------------------------------------------------------------
+  # VPC and internet access
+  # ---------------------------------------------------------------------------
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      # DNS resolution inside the VPC is on by default. Hostnames are switched
+      # on as well so that anything with a public IP also gets a public DNS
+      # name; the load balancer relies on this.
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: my-geo-life
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: my-geo-life
+
+  # A gateway is a free-standing object until it is attached to a VPC. The
+  # default route below names the gateway but has to wait for this attachment,
+  # which CloudFormation cannot infer from a !Ref; DependsOn states it.
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  # ---------------------------------------------------------------------------
+  # Subnets
+  # ---------------------------------------------------------------------------
+  # !Cidr cuts the VPC range into two blocks of 256 addresses (8 host bits):
+  # 10.0.0.0/24 and 10.0.1.0/24 with the default range. !GetAZs lists the
+  # region's zones, so no zone name is written here and the template works in
+  # any region.
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !Select [0, !Cidr [!Ref VpcCidr, 2, 8]]
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      # Anything launched here gets a public IP unless it opts out. Fargate
+      # tasks ask for theirs explicitly in the service definition; this
+      # setting is what makes the subnet "public" by convention.
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: my-geo-life-public-a
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: !Select [1, !Cidr [!Ref VpcCidr, 2, 8]]
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: my-geo-life-public-b
+
+  # ---------------------------------------------------------------------------
+  # Routing
+  # ---------------------------------------------------------------------------
+  # A new VPC has a main route table that only knows its own range. This table
+  # adds "everything else goes to the internet gateway" and is associated with
+  # both subnets. The route to the gateway is what makes a subnet public.
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: my-geo-life-public
+
+  DefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetBRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTable
+
+  # ---------------------------------------------------------------------------
+  # Security groups
+  # ---------------------------------------------------------------------------
+  # Neither group lists outbound rules, so both keep the default "all outbound
+  # allowed". The tasks need that to pull the image, read Parameter Store and
+  # reach the database.
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: my-geo-life-alb-sg
+      GroupDescription: Load balancer, HTTP from anywhere
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        # Plain HTTP. HTTPS would add port 443 here plus a certificate and a
+        # second listener on the load balancer.
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP from the internet
+      Tags:
+        - Key: Name
+          Value: my-geo-life-alb-sg
+
+  TaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: my-geo-life-task-sg
+      GroupDescription: Application tasks, container port from the load balancer only
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        # The source is another security group, not an address range: whatever
+        # carries the load balancer group may connect, nothing else, whatever
+        # IPs the load balancer nodes happen to have. A task therefore has a
+        # public IP but cannot be reached on it from the internet.
+        - IpProtocol: tcp
+          FromPort: !Ref ContainerPort
+          ToPort: !Ref ContainerPort
+          SourceSecurityGroupId: !Ref AlbSecurityGroup
+          Description: Container port from the load balancer
+      Tags:
+        - Key: Name
+          Value: my-geo-life-task-sg
+
+Outputs:
+  # Imported by the app stack with Fn::ImportValue. While that stack exists,
+  # this one cannot be deleted.
+  VpcId:
+    Value: !Ref Vpc
+    Export:
+      Name: !Sub ${AWS::StackName}-vpc-id
+  PublicSubnetIds:
+    Description: Both subnet ids in one comma-separated string. An export cannot be a list; importers split it with !Split.
+    Value: !Join [",", [!Ref PublicSubnetA, !Ref PublicSubnetB]]
+    Export:
+      Name: !Sub ${AWS::StackName}-public-subnet-ids
+  AlbSecurityGroupId:
+    Value: !GetAtt AlbSecurityGroup.GroupId
+    Export:
+      Name: !Sub ${AWS::StackName}-alb-sg-id
+  TaskSecurityGroupId:
+    Value: !GetAtt TaskSecurityGroup.GroupId
+    Export:
+      Name: !Sub ${AWS::StackName}-task-sg-id

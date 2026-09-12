@@ -1,0 +1,250 @@
+# my-geo-life app: the part that bills while it exists.
+#
+# ECS cluster, Fargate task definition, service and load balancer. Created for a demo and
+# deleted after; everything permanent lives in foundation.yaml and
+# network.yaml, whose exports this template imports by name. The scheduled
+# clean-up in cost-guard.yaml deletes this stack at night in case it was left
+# running.
+#
+# Deploy this stack with --role-arn set to the CloudFormation service role the
+# foundation stack exports. CloudFormation keeps that role on the stack and
+# uses it for every later update and delete, whoever triggers it.
+#
+# Traffic path: internet, then the application load balancer (port 80, in the
+# load balancer security group), then the target group, then the tasks (the
+# container port, in the task security group, which admits only the load
+# balancer group). Tasks get a public IP so they can pull the image and reach
+# the database without a NAT gateway, but nothing on the internet can connect
+# to that IP. The load balancer gives the app one stable address across
+# rolling updates and checks each task before sending it traffic.
+#
+# Intrinsic functions new in this template:
+#   !ImportValue name       a value another stack exported under that name
+#   !Split [",", string]    a list out of a delimited string (the subnet ids)
+#   !Sub [string, {map}]    !Sub with extra variables, used to put an imported
+#                           value inside a string
+#   ${X.Y} inside !Sub      the same as !GetAtt X.Y, used for the URL output
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: my-geo-life app. ECS cluster, Fargate task definition, service and application load balancer. Bills while it exists.
+
+Parameters:
+  ImageTag:
+    Type: String
+    MinLength: 1
+    Description: >-
+      Tag of the image to run from the my-geo-life ECR repository, for example
+      v1. No default on purpose: the first deploy must state it, later deploys
+      reuse the previous value unless overridden.
+
+  Cpu:
+    Type: String
+    Default: "256"
+    AllowedValues: ["256", "512", "1024"]
+    Description: Task CPU units; 1024 is one vCPU. Fargate accepts only certain CPU and memory pairs.
+
+  Memory:
+    Type: String
+    Default: "512"
+    AllowedValues: ["512", "1024", "2048", "4096"]
+    Description: Task memory in MiB. 256 CPU pairs with 512, 1024 or 2048; 512 CPU with 1024 to 4096.
+
+  DesiredCount:
+    Type: Number
+    Default: 1
+    MinValue: 0
+    Description: Tasks the service keeps running. 0 stops the app without deleting the stack.
+
+  ContainerPort:
+    Type: Number
+    Default: 3000
+    Description: Port the container listens on. Must match the port opened by the network stack.
+
+Resources:
+  # ---------------------------------------------------------------------------
+  # Cluster
+  # ---------------------------------------------------------------------------
+  Cluster:
+    # A Fargate cluster is a logical grouping with no machines of its own; it
+    # is free until tasks run in it.
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: my-geo-life
+      # Container Insights is the paid metrics tier. The free per-service CPU
+      # and memory metrics are enough here.
+      ClusterSettings:
+        - Name: containerInsights
+          Value: disabled
+
+  # ---------------------------------------------------------------------------
+  # Task definition
+  # ---------------------------------------------------------------------------
+  TaskDefinition:
+    # Immutable: every change registers a new revision of the family, and the
+    # service is pointed at the new revision. That is what a rolling update
+    # deploys.
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: my-geo-life
+      RequiresCompatibilities: [FARGATE]
+      # awsvpc gives each task its own network interface, IP and security
+      # group. It is the only mode Fargate supports.
+      NetworkMode: awsvpc
+      Cpu: !Ref Cpu
+      Memory: !Ref Memory
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX
+        CpuArchitecture: X86_64
+      # The execution role is used by ECS to pull the image, read the secrets
+      # and write logs. The task role is what the app itself can do in AWS.
+      ExecutionRoleArn: !ImportValue my-geo-life-foundation-task-execution-role-arn
+      TaskRoleArn: !ImportValue my-geo-life-foundation-task-role-arn
+      ContainerDefinitions:
+        - Name: app
+          # Repository URI from the foundation export, tag from the parameter.
+          Image: !Sub
+            - ${Repository}:${ImageTag}
+            - Repository: !ImportValue my-geo-life-foundation-ecr-uri
+          Essential: true
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+              Protocol: tcp
+          # Secrets arrive as environment variables, read from Parameter Store
+          # by the execution role when the task starts. Only the parameter
+          # ARNs are written here, built from the pseudo parameters; the
+          # values never appear in a template or a stack description.
+          Secrets:
+            - Name: MONGO_URI
+              ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/my-geo-life/MONGO_URI
+            - Name: JWT_SECRET
+              ValueFrom: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/my-geo-life/JWT_SECRET
+          # ECS runs this inside the container. The image is Alpine based, so
+          # wget is the busybox one. A task that fails the check is replaced.
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - !Sub wget -qO- http://localhost:${ContainerPort}/health || exit 1
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 15
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !ImportValue my-geo-life-foundation-log-group
+              awslogs-region: !Ref AWS::Region
+              # Stream names become app/app/<task id>: prefix, container name, task.
+              awslogs-stream-prefix: app
+
+  # ---------------------------------------------------------------------------
+  # Load balancer
+  # ---------------------------------------------------------------------------
+  LoadBalancer:
+    # Internet-facing, one node in each public subnet, reachable only on the
+    # ports its security group opens. Bills by the hour while it exists, which
+    # is why the whole stack is deleted between demos.
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: my-geo-life
+      Type: application
+      Scheme: internet-facing
+      IpAddressType: ipv4
+      Subnets: !Split [",", !ImportValue my-geo-life-network-public-subnet-ids]
+      SecurityGroups:
+        - !ImportValue my-geo-life-network-alb-sg-id
+
+  TargetGroup:
+    # The set of task IPs the load balancer forwards to. ECS registers each
+    # new task here and deregisters it when the task stops, so the group
+    # follows rolling updates and scaling on its own.
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: my-geo-life
+      VpcId: !ImportValue my-geo-life-network-vpc-id
+      Protocol: HTTP
+      Port: !Ref ContainerPort
+      # Fargate tasks are registered by IP, not by instance id.
+      TargetType: ip
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 15
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      TargetGroupAttributes:
+        # How long a task removed from the group keeps receiving in-flight
+        # requests before it is stopped. The default of 300 s makes every
+        # rolling update and stack delete wait five minutes per task.
+        - Key: deregistration_delay.timeout_seconds
+          Value: "10"
+
+  Listener:
+    # Attaches the target group to the load balancer: everything arriving on
+    # port 80 is forwarded to the group. HTTPS would be a second listener on
+    # 443 with a certificate, and this one would redirect to it.
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  # ---------------------------------------------------------------------------
+  # Service
+  # ---------------------------------------------------------------------------
+  Service:
+    # Keeps DesiredCount copies of the task definition running, replaces
+    # tasks that die or fail their health check, and performs rolling
+    # updates when the task definition changes.
+    Type: AWS::ECS::Service
+    # ECS refuses to register tasks in a target group that is not attached to
+    # a load balancer yet. The listener is what attaches it, and nothing in
+    # the properties below refers to the listener, so the order is stated.
+    DependsOn: Listener
+    Properties:
+      ServiceName: my-geo-life
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: !Ref DesiredCount
+      LoadBalancers:
+        - ContainerName: app
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn: !Ref TargetGroup
+      # A task that has just started may fail the load balancer health check
+      # while the app boots. ECS ignores those failures for this long instead
+      # of stopping the task.
+      HealthCheckGracePeriodSeconds: 60
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          # A public IP is the free way out to the internet; what may come in
+          # is decided by the security group, not by having an address.
+          AssignPublicIp: ENABLED
+          Subnets: !Split [",", !ImportValue my-geo-life-network-public-subnet-ids]
+          SecurityGroups:
+            - !ImportValue my-geo-life-network-task-sg-id
+      DeploymentConfiguration:
+        # Rolling update: start the new task first (up to twice the desired
+        # count), stop the old one only once the new one is running.
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        # Without the circuit breaker a task that keeps failing to start is
+        # retried indefinitely and the stack operation hangs for hours. With
+        # it, ECS marks the deployment failed after a few attempts, rolls
+        # the service back to the previous revision, and CloudFormation
+        # reports the failure within minutes.
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+
+Outputs:
+  Url:
+    Description: The app. Answers once the target group reports the task healthy.
+    Value: !Sub http://${LoadBalancer.DNSName}
+  ClusterName:
+    Value: !Ref Cluster
+  ServiceName:
+    Value: !GetAtt Service.Name
+  LogGroup:
+    Description: Where the container writes; the stream prefix is app.
+    Value: !ImportValue my-geo-life-foundation-log-group
