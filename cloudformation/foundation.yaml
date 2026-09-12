@@ -1,0 +1,216 @@
+# my-geo-life foundation: the permanent, free resources every deployment needs.
+#
+# Deployed once and left alone. Nothing here bills by the hour, so this stack
+# never needs to be deleted. It holds the ECR repository, the CloudWatch log
+# group, the two ECS roles, and one role that CloudFormation itself uses when
+# it works on the app stack.
+#
+# The app stack does not know this stack's resources by name; it imports them
+# through the Exports at the bottom. That is how CloudFormation links stacks.
+#
+# Intrinsic functions used here:
+#   !Ref X      the value of parameter X, or the name/id of resource X
+#   !GetAtt X.Y attribute Y of resource X (an ARN, a URI)
+#   !Sub "..."  replaces ${Name} with a parameter, resource or pseudo parameter
+#   Pseudo parameters are values AWS fills in: AWS::AccountId, AWS::Region,
+#   AWS::StackName. No account id or ARN is written into this file.
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: my-geo-life foundation. ECR repository, log group and IAM roles. Permanent and free.
+
+Parameters:
+  LogRetentionDays:
+    Type: Number
+    Default: 14
+    # CloudWatch accepts only certain values; the parameter refuses the others
+    # before the deploy starts.
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90]
+    Description: How long container logs are kept.
+
+  ImagesToKeep:
+    Type: Number
+    Default: 10
+    MinValue: 1
+    Description: The ECR lifecycle policy expires older images beyond this count.
+
+Resources:
+  # ---------------------------------------------------------------------------
+  # Container registry
+  # ---------------------------------------------------------------------------
+  Repository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: my-geo-life
+      # A tag like v2 may be re-pointed at a newer image. Immutable tags would be
+      # stricter; mutable is enough here because every deploy pushes a new tag.
+      ImageTagMutability: MUTABLE
+      # Free basic vulnerability scan of every pushed image. A registry-level
+      # scanning rule may already cover this; stating it here keeps the intent
+      # in the template.
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      # Without this, deleting the stack fails while images are in the repo.
+      # It means "delete the stack" also means "delete every image"; fine for
+      # a project whose images are rebuilt from git in one command.
+      EmptyOnDelete: true
+      # Lifecycle policies are written in JSON, embedded as a string. !Sub fills
+      # in the parameter; a JSON policy has no ${...} of its own so nothing
+      # else is touched.
+      LifecyclePolicy:
+        LifecyclePolicyText: !Sub |
+          {
+            "rules": [
+              {
+                "rulePriority": 1,
+                "description": "keep only the newest ${ImagesToKeep} images",
+                "selection": {
+                  "tagStatus": "any",
+                  "countType": "imageCountMoreThan",
+                  "countNumber": ${ImagesToKeep}
+                },
+                "action": { "type": "expire" }
+              }
+            ]
+          }
+
+  # ---------------------------------------------------------------------------
+  # Logs
+  # ---------------------------------------------------------------------------
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/my-geo-life
+      RetentionInDays: !Ref LogRetentionDays
+    # Default DeletionPolicy is Delete: removing this stack removes the logs.
+    # Retain would keep them; not worth it for a demo app.
+
+  # ---------------------------------------------------------------------------
+  # ECS roles
+  # ---------------------------------------------------------------------------
+  TaskExecutionRole:
+    # Worn by the ECS agent, not by the app: it pulls the image from ECR, reads
+    # the two secrets from Parameter Store to inject them, and writes logs.
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: my-geo-life-task-execution-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: my-geo-life-read-params
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/my-geo-life/*
+
+  TaskRole:
+    # Worn by the app itself while it runs. Empty on purpose: the app talks to
+    # Atlas over the internet and needs nothing from AWS. Permissions for any
+    # future AWS call from the app (a queue, a table) would go here.
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: my-geo-life-task-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+
+  # ---------------------------------------------------------------------------
+  # CloudFormation service role for the app stack
+  # ---------------------------------------------------------------------------
+  AppStackRole:
+    # By default CloudFormation borrows the permissions of whoever runs the
+    # deploy. When the app stack is deployed with --role-arn pointing here,
+    # CloudFormation assumes this role instead and remembers it for every later
+    # update or delete of that stack. The scheduled clean-up function in
+    # cost-guard.yaml can then delete the app stack with two CloudFormation
+    # permissions and no ECS or load balancer rights of its own.
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: my-geo-life-cfn-app-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: my-geo-life-app-stack
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # What app.yaml creates, updates and deletes: cluster, task
+              # definition, service, load balancer, target group, listener.
+              - Sid: AppResources
+                Effect: Allow
+                Action:
+                  - ecs:*
+                  - elasticloadbalancing:*
+                Resource: "*"
+              # ECS and the load balancer look up subnets and security groups.
+              - Sid: ReadNetwork
+                Effect: Allow
+                Action: ec2:Describe*
+                Resource: "*"
+              # Registering a task definition hands the two roles above to ECS.
+              # Handing a role to a service is itself a permission (PassRole),
+              # limited here to exactly these two roles and to ECS tasks.
+              - Sid: PassTaskRoles
+                Effect: Allow
+                Action: iam:PassRole
+                Resource:
+                  - !GetAtt TaskExecutionRole.Arn
+                  - !GetAtt TaskRole.Arn
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: ecs-tasks.amazonaws.com
+              # The first load balancer or ECS cluster in an account creates the
+              # matching service-linked role on the fly, and needs permission
+              # to do so.
+              - Sid: ServiceLinkedRoles
+                Effect: Allow
+                Action: iam:CreateServiceLinkedRole
+                Resource:
+                  - arn:aws:iam::*:role/aws-service-role/elasticloadbalancing.amazonaws.com/*
+                  - arn:aws:iam::*:role/aws-service-role/ecs.amazonaws.com/*
+
+Outputs:
+  # Each Export is a name other stacks can read with Fn::ImportValue. Export
+  # names must be unique per region, and a stack whose exports are in use
+  # cannot be deleted: the app stack pins this one down while it exists.
+  RepositoryUri:
+    Description: Image URI without a tag, for docker push and the task definition.
+    Value: !GetAtt Repository.RepositoryUri
+    Export:
+      Name: !Sub ${AWS::StackName}-ecr-uri
+  LogGroupName:
+    Value: !Ref LogGroup
+    Export:
+      Name: !Sub ${AWS::StackName}-log-group
+  TaskExecutionRoleArn:
+    Value: !GetAtt TaskExecutionRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-task-execution-role-arn
+  TaskRoleArn:
+    Value: !GetAtt TaskRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-task-role-arn
+  AppStackRoleArn:
+    Description: Pass as --role-arn on every deploy of the app stack.
+    Value: !GetAtt AppStackRole.Arn
+    Export:
+      Name: !Sub ${AWS::StackName}-cfn-app-role-arn
