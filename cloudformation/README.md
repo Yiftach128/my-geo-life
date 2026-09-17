@@ -10,7 +10,6 @@ passed as a parameter at deploy time.
 | `foundation.yaml` | `my-geo-life-foundation` | permanent | nothing |
 | `network.yaml` | `my-geo-life-network` | permanent | nothing |
 | `app.yaml` | `my-geo-life-app` | up for a demo, deleted after | ALB and Fargate task by the hour |
-| `cost-guard.yaml` | `my-geo-life-cost-guard` | permanent | nothing |
 
 The app stack imports role ARNs, subnet IDs and security group IDs that the foundation and
 network stacks export, so those two must exist first and cannot be deleted while the app
@@ -77,13 +76,13 @@ while the app stack imports its exports.
 ## app.yaml
 
 ECS cluster `my-geo-life`, a Fargate task definition for an image in the foundation
-repository, a service that keeps `DesiredCount` tasks running in the network stack's
-public subnets under `my-geo-life-task-sg`, and an internet-facing application load
-balancer in front of them with an HTTP listener on port 80 and a target group that
-health-checks `/health`. The two secrets are injected from Parameter Store by the task
-execution role; the template holds only their ARNs, built from pseudo parameters. This
-is the only stack that bills while it exists, so it is created for a demo and deleted
-after.
+repository, a service that runs the tasks in the network stack's public subnets under
+`my-geo-life-task-sg`, an internet-facing application load balancer in front of them
+with an HTTP listener on port 80 and a target group that health-checks `/health`, and
+auto scaling that keeps the service between one task and `MaxCount` (default 3). The
+two secrets are injected from Parameter Store by the task execution role; the template
+holds only their ARNs, built from pseudo parameters. This is the only stack that bills
+while it exists, so it is created for a demo and deleted after.
 
 Every operation on this stack passes `--role-arn`, the CloudFormation service role
 exported by the foundation stack. CloudFormation keeps that role on the stack and uses
@@ -136,6 +135,20 @@ aws cloudformation wait stack-update-complete --stack-name my-geo-life-app
 
 `Replacement: True` on a resource means CloudFormation will create a new one and delete
 the old one, which for a service or load balancer means downtime and a new address.
+
+The service scales on the load balancer's requests per target: above 200 requests a
+minute per task for three minutes it adds tasks, below that for fifteen minutes it
+removes them, never below one or above `MaxCount`. `DesiredCount` is only the number
+the service starts with. To watch it, send steady load at the URL (for example
+`hey -z 6m -c 2 -q 5 "$URL/health"`, about 600 requests a minute) and follow the
+desired count and the two alarms the policy created:
+
+```sh
+aws ecs describe-services --cluster my-geo-life --services my-geo-life \
+  --query "services[0].[desiredCount,runningCount]" --output text
+aws cloudwatch describe-alarms --alarm-name-prefix TargetTracking-service/my-geo-life \
+  --query "MetricAlarms[].[AlarmName,StateValue]" --output table
+```
 
 Delete when the demo is over:
 

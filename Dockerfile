@@ -20,6 +20,9 @@ RUN npm run build && npm prune --omit=dev
 
 # ---- runtime: compiled API + production deps + static frontend, nothing else ----
 FROM node:24-alpine AS runtime
+# Apply the security updates Alpine has published since the base image was built
+# (OpenSSL and friends). Must run before USER node, which cannot install packages.
+RUN apk upgrade --no-cache
 ENV NODE_ENV=production \
     PORT=3000 \
     STATIC_DIR=/app/public

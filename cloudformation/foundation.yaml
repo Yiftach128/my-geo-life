@@ -135,9 +135,10 @@ Resources:
     # By default CloudFormation borrows the permissions of whoever runs the
     # deploy. When the app stack is deployed with --role-arn pointing here,
     # CloudFormation assumes this role instead and remembers it for every later
-    # update or delete of that stack. The scheduled clean-up function in
-    # cost-guard.yaml can then delete the app stack with two CloudFormation
-    # permissions and no ECS or load balancer rights of its own.
+    # update or delete of that stack, whoever triggers it. The role lists
+    # exactly what the app stack needs, so a template change that reaches for
+    # a new API fails fast with AccessDenied instead of running with the
+    # deployer's admin rights.
     Type: AWS::IAM::Role
     Properties:
       RoleName: my-geo-life-cfn-app-role
@@ -170,6 +171,18 @@ Resources:
                   - ec2:Describe*
                   - ec2:GetSecurityGroupsForVpc
                 Resource: "*"
+              # The app stack hands the service's desired count to Application
+              # Auto Scaling and attaches a target tracking policy. The alarms
+              # behind such a policy are CloudWatch alarms created on behalf of
+              # the caller, hence the alarm actions.
+              - Sid: ServiceAutoScaling
+                Effect: Allow
+                Action:
+                  - application-autoscaling:*
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:PutMetricAlarm
+                  - cloudwatch:DeleteAlarms
+                Resource: "*"
               # Registering a task definition hands the two roles above to ECS.
               # Handing a role to a service is itself a permission (PassRole),
               # limited here to exactly these two roles and to ECS tasks.
@@ -182,15 +195,16 @@ Resources:
                 Condition:
                   StringEquals:
                     iam:PassedToService: ecs-tasks.amazonaws.com
-              # The first load balancer or ECS cluster in an account creates the
-              # matching service-linked role on the fly, and needs permission
-              # to do so.
+              # The first load balancer, ECS cluster or auto-scaled ECS service
+              # in an account creates the matching service-linked role on the
+              # fly, and needs permission to do so.
               - Sid: ServiceLinkedRoles
                 Effect: Allow
                 Action: iam:CreateServiceLinkedRole
                 Resource:
                   - arn:aws:iam::*:role/aws-service-role/elasticloadbalancing.amazonaws.com/*
                   - arn:aws:iam::*:role/aws-service-role/ecs.amazonaws.com/*
+                  - arn:aws:iam::*:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/*
 
 Outputs:
   # Each Export is a name other stacks can read with Fn::ImportValue. Export

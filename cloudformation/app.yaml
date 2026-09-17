@@ -1,10 +1,9 @@
 # my-geo-life app: the part that bills while it exists.
 #
-# ECS cluster, Fargate task definition, service and load balancer. Created for a demo and
-# deleted after; everything permanent lives in foundation.yaml and
-# network.yaml, whose exports this template imports by name. The scheduled
-# clean-up in cost-guard.yaml deletes this stack at night in case it was left
-# running.
+# ECS cluster, Fargate task definition, service, load balancer and the
+# service's auto scaling. Created for a demo and deleted after; everything
+# permanent lives in foundation.yaml and network.yaml, whose exports this
+# template imports by name.
 #
 # Deploy this stack with --role-arn set to the CloudFormation service role the
 # foundation stack exports. CloudFormation keeps that role on the stack and
@@ -26,7 +25,7 @@
 #   ${X.Y} inside !Sub      the same as !GetAtt X.Y, used for the URL output
 
 AWSTemplateFormatVersion: "2010-09-09"
-Description: my-geo-life app. ECS cluster, Fargate task definition, service and application load balancer. Bills while it exists.
+Description: my-geo-life app. ECS cluster, Fargate task definition, auto-scaled service and application load balancer. Bills while it exists.
 
 Parameters:
   ImageTag:
@@ -52,8 +51,18 @@ Parameters:
   DesiredCount:
     Type: Number
     Default: 1
-    MinValue: 0
-    Description: Tasks the service keeps running. 0 stops the app without deleting the stack.
+    MinValue: 1
+    Description: >-
+      Tasks the service starts with. Once the stack is up, auto scaling owns
+      the count between 1 and MaxCount.
+
+  MaxCount:
+    Type: Number
+    Default: 3
+    MinValue: 1
+    Description: >-
+      Most tasks auto scaling may run, which makes it the cost ceiling. The
+      floor of 1 is fixed in the template.
 
   ContainerPort:
     Type: Number
@@ -193,9 +202,12 @@ Resources:
   # Service
   # ---------------------------------------------------------------------------
   Service:
-    # Keeps DesiredCount copies of the task definition running, replaces
-    # tasks that die or fail their health check, and performs rolling
-    # updates when the task definition changes.
+    # Keeps the desired number of copies of the task definition running,
+    # replaces tasks that die or fail their health check, and performs
+    # rolling updates when the task definition changes. DesiredCount is the
+    # number at creation; auto scaling (below) changes it afterwards, and a
+    # later stack update that still states DesiredCount resets it, after
+    # which auto scaling moves it back to what the load requires.
     Type: AWS::ECS::Service
     # ECS refuses to register tasks in a target group that is not attached to
     # a load balancer yet. The listener is what attaches it, and nothing in
@@ -236,6 +248,46 @@ Resources:
         DeploymentCircuitBreaker:
           Enable: true
           Rollback: true
+
+  # ---------------------------------------------------------------------------
+  # Service auto scaling
+  # ---------------------------------------------------------------------------
+  ScalableTarget:
+    # Hands the service's desired count to Application Auto Scaling, within a
+    # floor and a ceiling. The floor is 1 because 0 would take the app down;
+    # the ceiling is a parameter because it is the cost ceiling. No role is
+    # named, so the scaling service uses its own service-linked role.
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      ServiceNamespace: ecs
+      ScalableDimension: ecs:service:DesiredCount
+      ResourceId: !Sub service/${Cluster}/${Service.Name}
+      MinCapacity: 1
+      MaxCapacity: !Ref MaxCount
+
+  ScalingPolicy:
+    # Target tracking: keep the requests each task receives per minute near
+    # the target, adding tasks above it and removing them below it. The
+    # scaling service creates and owns two CloudWatch alarms for this (out
+    # after 3 minutes above target, in after 15 minutes below) and sets the
+    # desired count to the metric divided by the target, rounded up, within
+    # the floor and ceiling. Health checks are not counted as requests, so
+    # an idle service stays at the floor.
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: my-geo-life-requests-per-task
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref ScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        # Far below what one task can serve, so that a modest load test shows
+        # scaling. A production value comes from measuring one task under
+        # load and taking a margin.
+        TargetValue: 200
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ALBRequestCountPerTarget
+          # The metric belongs to one target group behind one load balancer;
+          # the label names both by their full names.
+          ResourceLabel: !Sub ${LoadBalancer.LoadBalancerFullName}/${TargetGroup.TargetGroupFullName}
 
 Outputs:
   Url:
