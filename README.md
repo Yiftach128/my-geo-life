@@ -2,7 +2,7 @@
 
 I built My Geo Life to keep a personal map of the places that matter to me: saved spots, areas I care about, and addresses I look up a lot. You search for a place, drop a pin or draw a shape around an area, and it's saved to your account for next time.
 
-It's a full-stack  project I wrote to get more comfortable with React, Leaflet, and Node/Express API.
+It's a full-stack project I wrote to get more comfortable with React, Leaflet and a Node/Express API, then deployed to AWS with CloudFormation.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
@@ -86,6 +86,9 @@ Geo_app/
   public/      demo video, gif, screenshots
   Dockerfile   one production image: API + built frontend
   docker-compose.yml  runs that image with a local MongoDB
+  cloudformation/  the AWS deployment as CloudFormation templates
+  scripts/aws.sh  builds, pushes and deploys that image to AWS, or takes it down
+  .github/workflows/  CI: tests, compiles and builds the image on every push
 ```
 
 ## Running it locally
@@ -142,9 +145,27 @@ docker run --rm -p 3000:3000 -e MONGO_URI=... -e JWT_SECRET=... my-geo-life
 
 The `Dockerfile` is multi-stage: the frontend and backend are built in separate stages, and only the compiled API, its production dependencies and the static frontend land in the final `node:24-alpine` image, which runs as the unprivileged `node` user.
 
+## Deploying to AWS
+
+The same image runs on AWS as an ECS Fargate service behind an application load balancer, with the infrastructure written as CloudFormation templates in `cloudformation/`:
+
+```
+browser --:80--> Application Load Balancer --:3000--> ECS Fargate tasks (1 to 3) --> MongoDB Atlas
+                                                      image from ECR, secrets from SSM Parameter Store, logs to CloudWatch
+```
+
+Three stacks, split by lifecycle: `foundation` (ECR repository, log group, IAM roles) and `network` (VPC, public subnets, security groups) are deployed once and cost nothing. `app` (cluster, task definition, service, load balancer, auto scaling) is the only one that bills, a few cents an hour, so it goes up for a demo and comes down after:
+
+```bash
+scripts/aws.sh up v3      # build the image, push it to ECR, create or update the app stack, print the URL
+scripts/aws.sh down       # delete the app stack and wait until it is gone
+scripts/aws.sh status     # what is still there, and therefore still billing
+```
+
+How each stack is deployed and what it contains: [cloudformation/README.md](cloudformation/README.md).
+
 ## What I'd add next
 
-- Deploy it so there's a live link to try.
 - Add an option to share maps between users.
 
 ## About

@@ -89,6 +89,9 @@ exported by the foundation stack. CloudFormation keeps that role on the stack an
 it for later updates and deletes as well. `ImageTag` has no default: the first deploy
 must state it, later deploys reuse the previous value unless overridden.
 
+`scripts/aws.sh up <tag>` does the build, the push and this deploy in one go, and
+`scripts/aws.sh down` the delete at the end. The commands below are what the script runs.
+
 ```sh
 ROLE=$(aws cloudformation list-exports \
   --query "Exports[?Name=='my-geo-life-foundation-cfn-app-role-arn'].Value" --output text)
