@@ -88,7 +88,7 @@ Geo_app/
   docker-compose.yml  runs that image with a local MongoDB
   cloudformation/  the AWS deployment as CloudFormation templates
   scripts/aws.sh  builds, pushes and deploys that image to AWS, or takes it down
-  .github/workflows/  CI: tests, compiles and builds the image on every push
+  .github/workflows/  CI: tests, compiles, builds the image and lints the templates on every push
 ```
 
 ## Running it locally

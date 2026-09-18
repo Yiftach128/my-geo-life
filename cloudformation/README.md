@@ -3,7 +3,7 @@
 Infrastructure for my-geo-life as plain CloudFormation YAML, one template per lifecycle.
 Nothing in this folder contains account IDs, ARNs or IP addresses: templates use the
 `AWS::AccountId` and `AWS::Region` pseudo parameters, and anything account-specific is
-passed as a parameter at deploy time.
+passed as a parameter at deploy time. CI runs cfn-lint over the three templates on every push.
 
 | Template | Stack name | Lifecycle | Bills while it exists |
 |---|---|---|---|

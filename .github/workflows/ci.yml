@@ -61,3 +61,22 @@ jobs:
       # is what catches a broken Dockerfile or .dockerignore. The image is
       # thrown away with the runner; nothing is tagged for a registry.
       - run: docker build --tag my-geo-life:ci .
+
+  cloudformation:
+    name: cloudformation (lint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      # cfn-lint checks the templates offline against the CloudFormation resource
+      # specification: property names and types, required properties, allowed
+      # values, and every Ref, GetAtt and DependsOn target. A typo in a property
+      # fails here instead of failing the stack half-way through a deploy. It
+      # does not talk to AWS, so a missing export or permission still shows
+      # only at deploy time.
+      - run: pip install cfn-lint
+      # Templates first: --regions takes a list and would swallow paths placed
+      # after it. Warnings fail the job as well as errors, on purpose.
+      - run: cfn-lint cloudformation/*.yaml --regions eu-central-1

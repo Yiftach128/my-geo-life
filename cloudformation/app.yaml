@@ -297,6 +297,3 @@ Outputs:
     Value: !Ref Cluster
   ServiceName:
     Value: !GetAtt Service.Name
-  LogGroup:
-    Description: Where the container writes; the stream prefix is app.
-    Value: !ImportValue my-geo-life-foundation-log-group
