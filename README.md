@@ -4,11 +4,13 @@ I built My Geo Life to keep a personal map of the places that matter to me: save
 
 It's a full-stack project I wrote to get more comfortable with React, Leaflet and a Node/Express API, then deployed to AWS with CloudFormation.
 
+[![CI](https://github.com/Yiftach128/my-geo-life/actions/workflows/ci.yml/badge.svg)](https://github.com/Yiftach128/my-geo-life/actions/workflows/ci.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black)
 ![Node.js](https://img.shields.io/badge/Node.js-5FA04E?logo=nodedotjs&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white)
 ![Leaflet](https://img.shields.io/badge/Leaflet-199900?logo=leaflet&logoColor=white)
+![CloudFormation](https://img.shields.io/badge/CloudFormation-FF9900)
 
 ![My Geo Life demo](public/demo.gif)
 
