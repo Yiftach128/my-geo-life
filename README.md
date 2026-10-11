@@ -68,7 +68,7 @@ Auth is stateless JWTs signed with jose, and passwords are hashed with bcrypt. R
 
 The backend handles geocoding instead of the browser (using Nominatim api). It queues outgoing calls to stay under the limit and caches results. Creating or moving an object also reverse-geocodes its location to fill in that address label.
 
-On the frontend, drawing a shape happens in steps: for a circle you click the center then move the mouse to set the radius; for a polygon each click creates a vertice and clicking the first one again closes it.
+On the frontend, drawing a shape happens in steps: for a circle you click the center then move the mouse to set the radius; for a polygon each click creates a vertex and clicking the first one again closes it.
 
 After you add, edit, or delete something, I update React Query's in-memory copy of the data directly, so the map changes quickly without a refetch from the server.
 If the backend stops answering, the app confirms it by calling a `/health` endpoint, then shows a reconnecting popup.
@@ -174,5 +174,5 @@ How each stack is deployed and what it contains: [cloudformation/README.md](clou
 
 Made by Yiftach Peleg.
 
-- LinkedIn: https://www.linkedin.com/in/yiftach-peleg-4360762b4
+- LinkedIn: https://www.linkedin.com/in/yiftach-peleg
 - Email: yiftach2089@gmail.com
